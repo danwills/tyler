@@ -183,7 +183,7 @@ public class Particle implements Comparable
 		Blue,
 		Add,
 		Subtract,
-		ExlusiveOR,
+		ExclusiveOR,
 		Max,
 		Min,
 		Hue,
@@ -250,7 +250,7 @@ public class Particle implements Comparable
 											"Blue",
 											"Add",
 											"Subtract",
-											"ExlusiveOR",
+											"ExclusiveOR",
 											"Max",
 											"Min",
 											"Hue",
@@ -1750,7 +1750,7 @@ public class Particle implements Comparable
 				color = (newr << 16) | (newg << 8) | newb;
 				break;
 			}
-			case ExlusiveOR   :
+			case ExclusiveOR   :
 			{
 				int newr = ((prevcolx & 0x00ff0000) >> 16) - (int)( (float)(  (nextcolx & 0x00ff0000) >> 16 ) * (1.0f-stability) );
 				int newg = ((prevcolx & 0x0000ff00) >> 8) - (int)( (float)(  (nextcolx &  0x0000ff00) >> 8  ) * (1.0f-stability) );

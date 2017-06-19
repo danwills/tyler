@@ -1,16 +1,14 @@
 // tiler, tylers guts and medula 0.0blongata
 // its a [pixelmachine]
-// by dan wills
-// danw@rsp.com.au
+// by Dan Wills
+// gdanzo@gmail.com
 //
 
 import java.awt.*;
 import java.awt.datatransfer.*;
-import java.net.*;
 import java.util.*;
 import java.text.DateFormat;
 import java.lang.reflect.*;
-import java.lang.Math.*;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -18,13 +16,7 @@ import java.text.NumberFormat;
 import java.text.DecimalFormat;
 import java.awt.event.*;
 import java.awt.image.*;
-import java.applet.Applet;
-import java.security.*;
 import java.io.*;
-import javax.sound.sampled.*;
-//import javax.media.j3d.*;
-//import javax.media.j3d.Canvas3D;
-//import javax.media.j3d.GraphicsContext3D;
 
 
 //jpeg writing only for now poo
@@ -56,15 +48,26 @@ import javax.imageio.ImageIO;
 
 
 // todo:
-// topology draw to pixels and to topology buffer(s).. even very simple ones (shift N,S,E,W, swap/clone, average, rotate around point, attract, repel etc
-//    blend towards furthest/nearest, paint/reveal generator)
+
+// Figure out and fix keeping the current scroll-position when changing defaultLevel!
+// Have a default currentLevel time-blend-rate so that currentLevel may change gradually to a new value.
+
+// Multi-centers editWidget, so we don't need to use particle positions any more.
+//     The ability to snap to particle positions could be added later.
+//     Numcenters slider, ability to advect in various ways
+//     Per-center draggable position, radius and power.
+
+// Option to work in mousedown-paint mode!!.
+// Paint via hotkey-drag.. with nicely time-interpolated paint.
+// Topology draw to pixels and to topology buffer(s).. even very simple ones (shift N,S,E,W, swap/clone, average, rotate around point, attract, repel etc
+//    Blend towards furthest/nearest, paint/reveal generator)
 // setEveryFrameSave(bool) [done] grabEveryFrame(bool) [done]
-// more fractal topologygenerator modes [keep em coming]
-// add power control to generators [more]
-// particle/convolve/map driven topology generation/modification
-// automata modes (runtime rule sampling and universe lookups)_
+// More fractal topologygenerator modes [keep em coming]
+// Add power control to more generators [more]
+// Particle/convolve/map driven topology generation/modification
+// Automata modes (runtime rule sampling and universe lookups)_
 // LString generator nodes
-// oversampled conditional derivative/filter driven particle motion
+// Oversampled conditional derivative/filter driven particle motion
 //
 
 
@@ -72,41 +75,42 @@ import javax.imageio.ImageIO;
 // Use somekinda ordering/slicing map to divide up layers of topology and ditheredly set neighbors to blend.
 
 // Could try standard linear blending on the 1D addresses .. though of course it won't interpolate geometrically
-// and would probably alias like a bastard
+//     and would probably alias like a bastard
+// Or, since the floatTopologies both should still exist, I could linearly blend those geometrically.. but 
+//     then I'd have to re-rasterize every step.. which might not be very fast.. but it'd sure look cool..
+//     maybe the whole raster thing might be able to be skipped and still be fast?
+//     need well-filtered, fast (SIMD?) point sampling on images at Float2D-locations.
 
-// or, since the floatTopologies both should still exist, I could linearly blend those geometrically.. but 
-// then I'd have to rerasterize every step.. which might not be very fast.. but It'd sure look cool...
+// Runtime settings/img loading [done]
+// Fading between tiles [done] with different blend modes [node]
+// Main buffer/accumulator can work in feedback mode or otherwise, [node]
+// Zoomable tile draw with option of snap-to 1x 2x 3x etc..
+// Tile draw of tiles processed with (tiling) topologies.
+// Stochiastic and raycast-esque topology draw modes.
+
+// Sleep delay parameter [done]
+// Java2D version (bufferedimage,alpha+antialias) [done]
+// Conditional and assignment l-system atoms
+// Subsurface scattering/glossy ref[lec|rac]tion and boiling/energy reaction/diffusion ~style effects.
+
+// Fix bowtie and zap drawmodes to work properly with particleSize.
 
 
-// runtime settings/img loading
-// fading between tiles [done] with different blend modes [node]
-// main buffer/accumulator can work in feedback mode or otherwise, [node]
-// zoomable tile draw with option of snap-to 1x 2x 3x etc,
-// tile draw of tiles processed with (tiling) topologies
-// stochiastic and raycast-esque topology draw modes
-// * sleep delay parameter [done]
-// * java2D version (bufferedimage,alpha+antialias) [done]
-// conditional and assignment l-system atoms
-// subsurface scattering and energy reaction/diffusion ~style effects
 
-// * fix bowtie and zap drawmodes to work properly with particleSize
-// option to work in mousedown-paint mode
-// work on pixel mode to add brush size modulation, warp modes, brush shape parameters, AA alpha poly/func mode, brush blend modes etc
-// add a pixel mode that doesn't feed back (for nondestructive pixelmode resampling)
-// fix the buffer swapping/grabbing code
+// Work on pixel mode to add brush size modulation, warp modes, brush shape parameters, AA alpha poly/func mode, brush blend modes etc
+// Add a pixel mode that doesn't feed back (for nondestructive pixelmode resampling)
+// Fix the buffer swapping/grabbing code
 //
 // >> *!* preset/script saving/loading*!* << this needs major code cleanup to be implemented properly...
 // ~* image saving/loading
 //
-//full key documentation.. very important or no-one else will ever be able to use it! :(
+// Full key documentation.. very important or no-one else will ever be able to use it! :(
 //
 // alpha soft clear on/off
 //
 // setNumParticles() [done]
-// noise implementation
-// noisey tilescroll direction - that also takes effect on lostfocus
-//
-//MouseGesturesListener
+// Noise implementation [done]
+// Noisey tilescroll direction - that also takes effect on lostfocus
 
 public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyListener, MouseListener, MouseMotionListener, FocusListener, ImageObserver
 {
@@ -181,6 +185,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	
 	Point pixelWiggleAmp;
 	
+	Float2D draggingPos;
 	Point looppos;
 	Float2D delta;
 	float deltaAngle = 0.0F;
@@ -197,6 +202,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		crosshair,
 		hidden;
 		
+		private String text;
+		
 		static String[] getNames()
 		{
 			String[] k = new String[ values().length ];
@@ -208,7 +215,45 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			}
 			return k;
 		}
-	}
+		
+		public static MouseCursorMode fromString( String text ) 
+		{
+	    	
+            if ( defaultSystem.name().equalsIgnoreCase( text ) )
+            {
+                return defaultSystem;
+
+            } else if ( hand.name().equalsIgnoreCase( text ) ) {
+                return hand;
+
+            } else if ( crosshair.name().equalsIgnoreCase( text ) ) {
+                return crosshair;
+
+            } else if ( hidden.name().equalsIgnoreCase( text ) ) {
+                return hidden;
+            }
+
+            // if the enum string was borked, default!
+            return defaultSystem;
+    	
+		}
+        
+        public static MouseCursorMode fromInteger(int x) 
+        {
+            switch(x) 
+            {
+                case 0:
+                    return defaultSystem;
+                case 1:
+                    return hand;
+                case 2:
+                    return hand;
+                case 3:
+                    return crosshair;
+            }
+            return null;
+        }
+    }
 	
 	/* declare enum for particle paing modes */
 	public enum ParticlePaintMode 
@@ -230,7 +275,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		}
 	}
 	
-	ParticlePaintMode paintmode = ParticlePaintMode.particle;
+	ParticlePaintMode paintmode = ParticlePaintMode.particleTrace;
 	
 	public enum PixelBlendMode 
 	{
@@ -261,7 +306,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	int PIXELAREAWIDTH = 512;
 	int PIXELAREAHEIGHT = 512;
 	
-	float particlerate = 3.0f; //-1.0f
+	float particlerate = 13.0f; //-1.0f
 	float locrandom = 1;
 	float speedmultiplier = -0.2f;
 	double speedrandom = 24.6;
@@ -274,9 +319,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	public int nextbooleanmatrixsize = 11;
 	boolean[] currentbooleanmatrix;
 	
-	float scrollmultiplier = 0.2f; //defunkt
 	float currentlevel = 0.1f;
-	float currenttopologyparam = 1.0f;
+	float currenttopologyparam = 0.3f;
 	float currenttopologypower = 1.0f;
 	float topologysquishvalue = 0.2f;
 	boolean generatetopologymapped = false;
@@ -296,7 +340,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	public boolean draggingTilePosition = false;
 	boolean mousedown = false;
 	boolean ctrldown = false;
-	MouseCursorMode mousecursormode = MouseCursorMode.crosshair;
+	MouseCursorMode mousecursormode = MouseCursorMode.defaultSystem;
 	//float menuspeed = (float)Math.PI/16.0f;;
 	float menuspeed = (float)Math.PI/4.0f;
 	Point clickloc;
@@ -478,7 +522,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 
 		validate();
 
-		this.setCursor( Cursor.getPredefinedCursor( Cursor.WAIT_CURSOR ) );
+		this.setMouseCursorMode( this.mousecursormode );
 		
 		//this.update()
 		
@@ -667,7 +711,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		particluster = new ParticleSystem(numparticles, bufferdimension.width, bufferdimension.height, screendimension.width, screendimension.height, bufferpixels, toolrule);
 		output("Allocated particles OK.");
 		particluster.setDeathBySpeed(0.03f,Float.POSITIVE_INFINITY);
-		particluster.setChannelSpinLevel( 0.6f );
+		particluster.setChannelSpinLevel( 0.02142f );
 		particluster.setPixelSpaceScale( 1.0f/scalepixelbuffer );
 		
 		dust = new Particle[pbuffersize]; //dust buffering
@@ -722,7 +766,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		output("Turning ON 'Continuous Pixel Grab'.. (Ctrl-Shift-w to Toggle)");
 		setContinuousPixelGrab( true );
 		
-		setPixelAlpha( 40 );
+		//setPixelAlpha( 33 );
 		
 		//mouseGestures = new MouseGestures();
         //mouseGestures.addMouseGesturesListener( this );
@@ -748,7 +792,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		
 		initialised = true;
 
-		this.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		this.setMouseCursorMode( this.mousecursormode );
 	}
 
 	public void setParentComponent(Component c)
@@ -1380,7 +1424,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		    	particluster.update( framenumber );
 				if (!particluster.isPixelDrawable())
 				{
-					particluster.draw(buffercontext,paintmode );
+					particluster.draw( buffercontext, paintmode );
 				}
 			}
 				
@@ -1520,6 +1564,11 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		{
 			switch ( topologyNextFrameMode )
 			{
+				// Queue topologyprocessor thread to process sub-frame buckets of topology,
+				// potentially also clobber/kill the current topologyprocessor queue if there's still things pending
+				// then just wait for all buckets to be finished... 
+				// should be fast-ish I hope (at least faster than single-threaded) if there's enough threads!?
+				
 				case average :
 				{
 					topologylayer.nextFrameInlineBlend(bufferpixels,processbuffer,warpwithalpha,extractormap);
@@ -1628,8 +1677,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 					topologylayer.nextFrameRuleMaxMin( bufferpixels, processbuffer, toolrule.getFloatHarvest(), 1.0f, warpwithalpha, extractormap,true );
 				}
 			
-			}   			
-			System.arraycopy(processbuffer, 0, bufferpixels, 0, processbuffer.length);
+			}
+			System.arraycopy( processbuffer, 0, bufferpixels, 0, processbuffer.length );
 		}
 	}
 	
@@ -1821,6 +1870,13 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			topologyRegenerating = true;	
 			int numpoints = (multipointfromparticle) ? particluster.getNumActiveParticles() : numcentersmultipoint; //enhance numcenters a bit
 			
+			output( ">>>>>>>>>>>>> numpoints: " + numpoints );
+			
+			if (numpoints == 0) // couldn't get any particle? fix this
+			{
+				numpoints = numcentersmultipoint;
+				multipointfromparticle = false;
+			}
 			float xs[] = new float[numpoints];
 			float ys[] = new float[numpoints];
 			double levels[] = new double[numpoints];
@@ -1839,6 +1895,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			
 			for (int i = 0; i < numpoints; i++)
 			{
+				// TODO: Provide more control ovr this rand!
 				levels[i] = ((randex.nextDouble()-0.5f)*2.0f) * currenttopologyparam;
 				powers[i] = currenttopologypower;
 			}
@@ -2029,19 +2086,19 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	{ topologysquishvalue = towhat; }
 	
 	public void setCurrentTopologyPower(float towhat)
-	{currenttopologypower = towhat;}
+	{ currenttopologypower = towhat; }
 	
 	public void setCurrentSpin(float towhat)
-	{spin = towhat;}
+	{ spin = towhat; }
 
 	public void setSpinRandom(float towhat)
-	{spinrandom = towhat;}
+	{ spinrandom = towhat; }
 
 	public void setSpinProbability(float towhat)
-	{spinprobability = towhat;}
+	{ spinprobability = towhat; }
 
 	public void setLocRandom(float towhat)
-	{locrandom = towhat;}
+	{ locrandom = towhat; }
 
 	public void setSpeedRandom(float towhat)
 	{ speedrandom = towhat; }
@@ -2059,7 +2116,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	
 	public void setCurrentLevel( float towhat )
 	{ 
-		currentlevel = towhat; 
+		float prevcurrentlevel = currentlevel;
+        currentlevel = towhat;
 		output("currentLevel is now: " + currentlevel );
 	}
 	
@@ -2087,11 +2145,19 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	//public void sqrtCurrentLevel( )
 	//{ currentlevel = (float) ( ( currentlevel < 0 ) ? -Math.sqrt( -currentlevel ) : Math.sqrt( currentlevel ) ); }
 	
+    
 	//int setMethods( int towhat )
 	
-	public void setMouseCursorMode( int towhat )
+	public void setMouseCursorModeFromInt( int towhat )
+	{
+        //output( "mcm string is: " + towhat );
+		// MouseCursorMode mcm = MouseCursorMode.fromInteger( towhat );
+		setMouseCursorMode( MouseCursorMode.values()[towhat] );
+	}
+	
+	public void setMouseCursorMode( MouseCursorMode towhat )
 	{ 
-		mousecursormode = MouseCursorMode.values()[towhat]; 
+		mousecursormode = towhat;
 		
 		switch( mousecursormode )
 		{
@@ -2151,26 +2217,39 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	}
 	
 	public void setAlphaFromLumiAmount( int towhat )
-	{ alphaFromLumiAmount = towhat & 0xff; }
+	{
+		alphaFromLumiAmount = towhat & 0xff;
+	}
 	
 	public void setPixelAlpha( int towhat )
-	{ pixelAlpha = towhat & 0xff; }
+	{
+		pixelAlpha = Math.max( 0, Math.min( towhat, 0xff ) );
+	}
 	
 	public void setSaveWhichBuffer( int towhat )
-	{ saveWhichBuffer = (towhat <= 0) ? 0 : 1; }
+	{
+		saveWhichBuffer = (towhat <= 0) ? 0 : 1;
+	}
 	
 	public void postTabMenu( int selection )
-	{ System.out.println("temporary tab menu callback"); }
-	
+	{
+		System.out.println("temporary tab menu callback");
+	}
 	
 	public void setTopologyGeneratorMode( int towhat )
-	{ topologygeneratormode = Topology.TopologyGeneratorMode.values()[towhat]; }
+	{
+		topologygeneratormode = Topology.TopologyGeneratorMode.values()[ towhat ];
+	}
 		
 	public void setTopologyOversampling( int towhat )
-	{ topologyoversampling = towhat; }
+	{
+		topologyoversampling = towhat;
+	}
 	
 	public void setTopologyNextFrameMode( int towhat )
-	{ topologyNextFrameMode = Topology.TopologyBlendMode.values()[towhat]; }
+	{
+		topologyNextFrameMode = Topology.TopologyBlendMode.values()[ towhat ];
+	}
 	
 	public void setPixelBlendMode( int towhat )
 	{ pixelblendmode = PixelBlendMode.values()[towhat]; }
@@ -2187,18 +2266,34 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		output("Set topology render mode to: " + topologyrendermode);
 	}
 	
-	public void setClearAlpha(int towhat)
-	{ clearAlpha = towhat; }
+	public void setClearAlpha( int towhat )
+	{
+		clearAlpha = towhat; 
+	}
 	
-	public void setTileLoadAlpha(  int towhat)
-	{ tileLoadAlpha = (towhat <= 0) ? 1 : (towhat > 0xff) ? 0xff : towhat; }
+	public void setTileLoadAlpha( int towhat )
+	{
+		tileLoadAlpha = (towhat <= 0) ? 1 : (towhat > 0xff) ? 0xff : towhat;
+	}
 	
 	public void setInteractiveMode(int towhat)
-	{ interactiveMode = towhat; }
+	{
+		interactiveMode = towhat;
+	}
 	
 	public void setNumCentersMultiPoint(int towhat)
-	{ numcentersmultipoint = towhat; }
+	{
+		numcentersmultipoint = towhat;
+	}
 	
+	public void systemWideExitWhenTrue( boolean whentrue )
+	{
+		if ( whentrue )
+		{
+			systemWideExit();
+		}
+	}
+			
 	//very trusting to have this as a public method.. but anyway..
 	public void systemWideExit()
 	{
@@ -2287,10 +2382,21 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			{
 					currentimage = randex.nextInt() % numimages;
 					currentimage = (currentimage < 0) ? -currentimage : currentimage;
-			}
-			else currentimage = (currentimage + 1) % numimages;
-			output("Loading image " + currentimage);
-			loadImage(imagenames[currentimage]);
+                    output("Loading image " + currentimage);
+                    loadImage(imagenames[currentimage]);
+			} else {
+                System.out.println( "YO!" );
+                //currentimage = (currentimage + 1) % numimages;
+                // post tab menu
+                String[] methodList = keymap.getKeyToolStrings();
+                
+                EditWidget tabEditWidget = new EditWidget( EditWidget.widgetType.MenuValue, "postTabMenu", keymap, methodList, e.getX(), e.getY(), EditWidget.widgetDrawMode.Default, widgetresultscale, Tiler.bgcolor, Tiler.midcolor, Tiler.fgcolor, (Component) this);
+                addWidget( tabEditWidget );
+                //KeyAction tabMenuAction = new KeyAction( "", "postTabMenu", EditWidget.widgetType.MenuValue, false, K, methodList, T, "Tab menu for actions", tab );
+                //keymap.put( tab, tabMenuAction );
+                //keymap.postTabMenu( "" );
+                System.out.println( "B'OH!" );
+            }
 		}
 		
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
@@ -2446,8 +2552,43 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		}
 		currmouse = (currmouse + 1) % mousebufferlength;
 		
+        if ( ( (mods & InputEvent.CTRL_MASK) != 0) && ( ( mods & InputEvent.SHIFT_MASK ) != 0 ) && ( ( mods & InputEvent.ALT_MASK) == 0 ) )  //then move the loopPos around in 'drag' mode
+		{
+			flooppos = new Float2D(clicklooppos.x + ((float)(clickloc.x-e.getX()) * currentlevel),  clicklooppos.y + ((float)(clickloc.y-e.getY()) * currentlevel));
+			draggingTilePosition = true;
+		} else {
+			draggingTilePosition = false;
+		}
+        
+		if ( ( (mods & InputEvent.CTRL_MASK) != 0) && ( (mods & InputEvent.SHIFT_MASK) != 0) && ((mods & InputEvent.ALT_MASK) != 0) ) 
+		{
+			for ( EditWidget awidget : dawidgets )
+			{
+				if ( awidget.isAlive() )
+				{
+					// output( "awidget is: " + awidget );
+					// output( "position is: " + e.getX() + "," + e.getY() );
+					int offsetX = 0;
+					int offsetY = 0;
+					
+					// TODO: make dragging preserve the offset when engaged!
+					// so you can move without dragging, then drag with current offset!
+					if ( draggingPos == null )
+					{
+						float[] widgetPos = awidget.getPosition(); 
+						draggingPos = new Float2D( widgetPos[0] - e.getX(), widgetPos[1] - e.getY() );
+					} 
+					offsetX = (int)draggingPos.x;
+					offsetY = (int)draggingPos.y;
+					
+					awidget.setPosition( offsetX + e.getX(), offsetY + e.getY() );
+				}
+			}
+		} else if (draggingPos != null) {
+			draggingPos = null;
+		}
 		
-		mouseloc.move(e.getX(),e.getY());
+		mouseloc.move( e.getX(), e.getY() );
 		
 		//delta = new Float2D( (float)( e.getX() - (float) screendimension.width / 2 ) / 8,
 		//			(float)( e.getY() - (float) screendimension.height / 2 ) / 8 );

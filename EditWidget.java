@@ -893,6 +893,16 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 		return defaultdrawmode;
 	}
 	
+	public void setPosition( int xloc_pos, int yloc_pos )
+	{
+		xloc = xloc_pos;
+		yloc = yloc_pos;
+	}
+	
+	public float[] getPosition()
+	{
+		return new float[]{xloc, yloc};
+	}
 	
 	public void mousePressed(MouseEvent m)
 	{
@@ -1077,6 +1087,9 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 		{
 			if ( rectContainsPtInX( bbox, mouseloc ) )
 			{
+				// System.out.println( "Pt is in rect, in X!" );
+				// should prolly only work when within-range y-wise too!
+				
 				int ydown = mouseloc.y - bbox.y;
 				int selection = ydown / choiceheight;
 				//Collection<String> topLevel = menutree.getSuccessors( "" );
@@ -1089,9 +1102,11 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 				//menuchosen = new Tree("");
 				//String topItems[] = new String[ nextLevel.size() ];
 				//topItems = nextLevel.toArray( topItems );
-				String chosenStr = nextChoices[ chosen ];
-
-				Tree<String> leafTree = treeChoice.addLeaf( chosenStr );
+				if ( (chosen >= 0) & (chosen < nextChoices.length) )
+				{
+					String chosenStr = nextChoices[ chosen ];
+					Tree<String> leafTree = treeChoice.addLeaf( chosenStr );
+				}
 
 			} else if ( mouseloc.x > ( bbox.x + bbox.width ) ) {
 			

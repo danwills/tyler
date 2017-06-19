@@ -15,7 +15,7 @@ public final class TopologyGenerationThread extends Thread
 	int buffer[];
 	Tiler parentTiler;
 	
-	TopologyGenerationThread( TopologyGenerationSettings ts, int[] pixels, Tiler parent)
+	TopologyGenerationThread( TopologyGenerationSettings ts, int[] pixels, Tiler parent )
 	{
 		theSettings = ts;
 		buffer = pixels;
@@ -26,8 +26,8 @@ public final class TopologyGenerationThread extends Thread
 	
 	public void run()
 	{
-		Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-		if (this.theSettings == null) return;
+		Thread.currentThread().setPriority( Thread.MIN_PRIORITY );
+		if ( this.theSettings == null ) return;
 		
 		TopologyGenerationSettings t = this.theSettings;
 		topologylayer = new Topology(t.topologyWidth, t.topologyHeight, buffer, t.numwarplayers,new Random());
@@ -106,7 +106,7 @@ public final class TopologyGenerationThread extends Thread
 	{
 		TopologyGenerationSettings t = this.theSettings;
 		//should wait here if the writeHere toplogy is currently being processed..
-		//if this takes too long I could still get tearing.. hmm
+		//if this takes too long we could still see tearing.. hmm
 		
 		//topologylayer.newBlendedAccurateTopology( writeHere.getAccurateX(), writeHere.getAccurateY(), accurateX, accurateY,  blendAlpha );
 		

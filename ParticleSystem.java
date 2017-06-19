@@ -49,7 +49,7 @@ public class ParticleSystem
 	//public final static int BRANCH_DEPTH = 4;
 	//public final static int NUM_SIZEMODES = 4;
 	
-	particleSizeSource sizesource = particleSizeSource.Channel;
+	particleSizeSource sizesource = particleSizeSource.ChannelAgeTriangle;
 	
 	//smoothstep +
 	//age -> size normalization + -> lifespan

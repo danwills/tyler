@@ -11,8 +11,6 @@
 //
 
 //#include <math.h>
-import java.lang.Math.*;
-//#include <improvedPerlinNoise.h>
 
 public class improvedPerlinNoise
 {

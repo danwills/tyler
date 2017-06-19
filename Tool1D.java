@@ -936,7 +936,8 @@ class Tool1D implements MouseListener, MouseMotionListener, KeyListener
 						
 					} else if ( shift & ctrl )  {
 						
-						//System.out.println( "soften");
+						// System.out.println( "soften");
+						// aka smoothing or blur
 						softenRuleWithCoordinates( e.getX(), e.getY() );
 						
 					}

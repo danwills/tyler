@@ -58,6 +58,7 @@ class TilerKeyMap
 		
 		//won't worry about the numbers' shifted values for the moment..
 		long k1 = (((long)KeyEvent.VK_1)<< 32);
+		long shiftk1 = addShift( k1 );
 		long k2 = (((long)KeyEvent.VK_2)<< 32);
 		long k3 = (((long)KeyEvent.VK_3)<< 32);
 		long k4 = (((long)KeyEvent.VK_4)<< 32);
@@ -225,6 +226,11 @@ class TilerKeyMap
 		Object[] oneFloat = { new Float( 1.0f ) };
 		Object[] twoFloat = { new Float( 2.0f ) };
 		Object[] halfFloat = { new Float( 0.5f ) };
+		
+		Object[] ptOTwoFiveFloat = { new Float(0.025) };
+		Object[] ptOEightFloat = { new Float(0.08) };
+		Object[] quarterFloat = { new Float(0.25) };
+		
 		Object[] point1Float = { new Float( 0.1f ) };
 		Object[] point2Float = { new Float( 0.2f ) };
 		Object[] point3Float = { new Float( 0.3f ) };
@@ -258,7 +264,7 @@ class TilerKeyMap
 		actions.add( new KeyAction( "Channel/Channel Offset", "setChannelOffset", EditWidget.widgetType.FloatValue, false, M , null, T, "Offset for default extracted channel", ctrlB ) );
 		actions.add( new KeyAction( "Channel/Channel Power", "setChannelPower", EditWidget.widgetType.FloatValue, false, M , null, T, "Power for default extracted channel", shiftB ) );
 		actions.add( new KeyAction( "Channel/Static Value", "setStaticChannel", EditWidget.widgetType.IntValue, false, M , null , T, "Value of static channel when default extraction mode is set to staticChannel", ctrlF ) );
-		actions.add( new KeyAction( "Channel/Set Extractor", "setDefaultChannel", EditWidget.widgetType.EnumValue, false, M, (Object[]) MiniPixelTools.pixelChannel.getNames(), T, "Default channel to extract from pixel values", altM ) );
+		actions.add( new KeyAction( "Channel/Set Extractor", "setDefaultChannel", EditWidget.widgetType.EnumValue, false, M, MiniPixelTools.pixelChannel.getNames(), T, "Default channel to extract from pixel values", altM ) );
 		
 		
 		//Global
@@ -266,12 +272,15 @@ class TilerKeyMap
 		actions.add( new KeyAction( "Globalz/Debug Mode", "setDebug", EditWidget.widgetType.BooleanValue, false, T , null , T, "Toggle debugging output - add or remove aunt carla's sock", ctrlAltD ) );
 		actions.add( new KeyAction( "Globalz/Pants on Fire", "setYourPantsOnFire", EditWidget.widgetType.IntValue, false, T, null, T, "Your pants are now on fire.", altA ) );
 		actions.add( new KeyAction( "Globalz/Wiggle Jump Rate", "setWiggleJumpFrameRate", EditWidget.widgetType.IntValue, false, T , null, T, "Length in frames between random jumps in pixelbuffer position ", ctrlShiftH ) );
-		actions.add( new KeyAction( "Globalz/Mouse Cursor", "setMouseCursorMode", EditWidget.widgetType.EnumValue, false, T , (Object[]) Tiler.MouseCursorMode.getNames() , T, "View mode of the mouse cursor", ctrlH ) );
+		actions.add( new KeyAction( "Globalz/Mouse Cursor", "setMouseCursorModeFromInt", EditWidget.widgetType.EnumValue, false, T , Tiler.MouseCursorMode.getNames(), T, "View mode of the mouse cursor", ctrlH ) );
 		actions.add( new KeyAction( "Globalz/Macro Record", "setRecording", EditWidget.widgetType.BooleanValue, false, E, null , T, "Toggle recording of EditWidget events.. (experimental) )", altR ) );
 		actions.add( new KeyAction( "Globalz/Sleep Delay", "setSleepDelay", EditWidget.widgetType.IntValue, false, T, null, T, "Sleep delay in main thread (can be used to slow things down if neccesary) )", ctrlShiftS ) );
 		actions.add( new KeyAction( "Globalz/Print Help","printKeyMap", EditWidget.widgetType.NoValue, true, K, null, T, "Print the keymap - a kind of help", altH ) );
 		actions.add( new KeyAction( "Globalz/Quit", "systemWideExit", EditWidget.widgetType.NoValue, true, T, null, T, "Alt-F4 detected, had enough then?", ctrlShftEsc ) );
-		actions.add( new KeyAction( "Globalz/Quit", "systemWideExit", EditWidget.widgetType.NoValue, true, T, null, T, "Ctrl-Q detected, had enough have we?", ctrlQ ) );
+		//Too many times by accident!
+		//actions.add( new KeyAction( "Globalz/Quit", "systemWideExit", EditWidget.widgetType.NoValue, true, T, null, T, "Ctrl-Q detected, had enough have we?", ctrlQ ) );
+		//make it so you have to send it True
+		actions.add( new KeyAction( "Globalz/Quit", "systemWideExitWhenTrue", EditWidget.widgetType.BooleanValue, false, T, null, T, "Ctrl-Q detected, time to decide if we've had enough is it?", ctrlQ ) );
 		
 		
 		//Output
@@ -287,11 +296,11 @@ class TilerKeyMap
 		//Particles/Visual
 		actions.add( new KeyAction( "Particles/Visual/Base Alpha", "setBaseAlpha", EditWidget.widgetType.IntValue, false, P , null, T, "Particle base alpha, the basic opacity of the particles", ctrlA ) );
 		actions.add( new KeyAction( "Particles/Visual/Channel Alpha", "setChannelAlpha", EditWidget.widgetType.IntValue, false, P , null, T, "Particle opacity amount that is set from their default extracted channel", shiftA ) );
-		actions.add( new KeyAction( "Particles/Visual/Paint Mode", "setPaintMode", EditWidget.widgetType.EnumValue, false, T , (Object[]) Tiler.ParticlePaintMode.getNames() , T, "Set the mode in which to draw particles", shiftC ) );
-		actions.add( new KeyAction( "Particles/Visual/Draw Shape", "setParticleDrawMode", EditWidget.widgetType.EnumValue, false, P , (Object[]) Particle.particleDrawMode.getNames() , T, "Set the particle draw mode", altI ) );
-		actions.add( new KeyAction( "Particles/Visual/Size Source", "setSizeSource", EditWidget.widgetType.EnumValue, false, P ,(Object[]) ParticleSystem.particleSizeSource.getNames() , T, "Source of size value for particles", altJ ) );
+		actions.add( new KeyAction( "Particles/Visual/Paint Mode", "setPaintMode", EditWidget.widgetType.EnumValue, false, T , Tiler.ParticlePaintMode.getNames(), T, "Set the mode in which to draw particles", shiftC ) );
+		actions.add( new KeyAction( "Particles/Visual/Draw Shape", "setParticleDrawMode", EditWidget.widgetType.EnumValue, false, P , Particle.particleDrawMode.getNames(), T, "Set the particle draw mode", altI ) );
+		actions.add( new KeyAction( "Particles/Visual/Size Source", "setSizeSource", EditWidget.widgetType.EnumValue, false, P , ParticleSystem.particleSizeSource.getNames(), T, "Source of size value for particles", altJ ) );
 		actions.add( new KeyAction( "Particles/Visual/Color Stability", "setParticleStability", EditWidget.widgetType.FloatValue, false, P, null , T, "Particle stability (kinda how much they withstand changes to their color) )", ctrlShiftP ) );
-		actions.add( new KeyAction( "Particles/Visual/Color Mode", "setParticleColorMode", EditWidget.widgetType.EnumValue, false, P, (Object[]) Particle.particleColorMode.getNames(), T, "Particle stability (kinda how much they withstand changes to their color)", ctrlP ) );
+		actions.add( new KeyAction( "Particles/Visual/Color Mode", "setParticleColorMode", EditWidget.widgetType.EnumValue, false, P, Particle.particleColorMode.getNames(), T, "Particle stability (kinda how much they withstand changes to their color)", ctrlP ) );
 		actions.add( new KeyAction( "Particles/Visual/Size Slope", "setSizeSlope", EditWidget.widgetType.FloatValue, false, P, null, T, "Sizeslope - how fast particles shrink when in 'age' particleDrawMode", ctrlShiftQ ) );
 		actions.add( new KeyAction( "Particles/Visual/Base Size", "setBaseSizeInt", EditWidget.widgetType.IntValue, false, P, null, T, "Base size of emitted particles", q  ) );
 		actions.add( new KeyAction( "Particles/Visual/Pixel Space Scale", "setPixelSpaceScale", EditWidget.widgetType.FloatValue, false, P, null, T, "Scaling of the pixelbuffer space with respect to particle sampling", altU ) );
@@ -335,7 +344,7 @@ class TilerKeyMap
 		actions.add( new KeyAction( "Pixelbuffer/Toggle Fade", "tileFadeToggle", EditWidget.widgetType.NoValue, true, T , null, T, "Toggle alpha fading state", ctrlC ) );
 		actions.add( new KeyAction( "Pixelbuffer/Visibility", "toggleClearMode", EditWidget.widgetType.NoValue, true, T , null, T, "Toggle whether to draw the pixelbuffer or not", c ) );
 		actions.add( new KeyAction( "Pixelbuffer/Copy to Source Tile", "copyBufferPixelsToTilePixels", EditWidget.widgetType.NoValue, true, T , null , T, "Copy contents of pixel buffer to tile buffer (ie grab current state as the tile) ) ", ctrlShiftG ) );
-		actions.add( new KeyAction( "Pixelbuffer/Pixel Blend Mode", "setPixelBlendMode", EditWidget.widgetType.EnumValue, false, T , (Object[]) Tiler.PixelBlendMode.getNames() , T, "Set the pixel blend mode of the tile image drawing into the feedback buffer", shiftI ) );
+		actions.add( new KeyAction( "Pixelbuffer/Pixel Blend Mode", "setPixelBlendMode", EditWidget.widgetType.EnumValue, false, T , Tiler.PixelBlendMode.getNames(), T, "Set the pixel blend mode of the tile image drawing into the feedback buffer", shiftI ) );
 		actions.add( new KeyAction( "Pixelbuffer/Visibility Again", "togglePixelAccess", EditWidget.widgetType.NoValue, true, T, null, T, "Toggle pixelaccess - pixel procesing and visibility of the main buffer", p ) );
 		actions.add( new KeyAction( "Pixelbuffer/Tile Load Alpha", "setTileLoadAlpha", EditWidget.widgetType.IntValue, false, T, null, T, "Rate with which to blend in new tiles when they are loaded", ctrlShiftU ) );
 		actions.add( new KeyAction( "Pixelbuffer/Tile Draw Alpha", "setClearAlpha", EditWidget.widgetType.IntValue, false, T, null, T, "Opacity with which to draw the tile into the processing buffer", u ) );
@@ -356,15 +365,15 @@ class TilerKeyMap
 		actions.add( new KeyAction( "Topology/Oversampling", "setTopologyOversampling", EditWidget.widgetType.IntValue, false, T , null, T, "Topology oversampling", altO ) );
 		actions.add( new KeyAction( "Topology/Use Alpha", "setWarpWithAlpha", EditWidget.widgetType.BooleanValue, false, T , null , T, "Set whether to use alpha in the topology processing (only supported in some topology blend modes) )", shiftH ) );
 		actions.add( new KeyAction( "Topology/Use Particles in Multipoint", "setMultipointFromParticle", EditWidget.widgetType.BooleanValue, false, T ,null  , T, "Use particle positions or random positions in multipoint topology generation modes", ctrlJ ) );
-		actions.add( new KeyAction( "Topology/Blend Mode", "setTopologyNextFrameMode", EditWidget.widgetType.EnumValue, false, T ,(Object[]) Topology.TopologyBlendMode.getNames() , T, "Topology processing mode (pixel and automata blend modes)", shiftJ ) );
+		actions.add( new KeyAction( "Topology/Blend Mode", "setTopologyNextFrameMode", EditWidget.widgetType.EnumValue, false, T , Topology.TopologyBlendMode.getNames(), T, "Topology processing mode (pixel and automata blend modes)", shiftJ ) );
 		actions.add( new KeyAction( "Topology/Generate Mapped", "setGenerateTopologyMapped", EditWidget.widgetType.BooleanValue, false, T, null, T, "Whether to use mapped topology generation for generator modes that support it", shiftM ) );
-		actions.add( new KeyAction( "Topology/Rasterization Mode", "setTopologyRenderMode", EditWidget.widgetType.EnumValue, false, T, (Object[]) Topology.TopologyRenderMode.getNames(), T, "Mode in which to rasterize topologie. (the topology squish value is used in chain and ramp types)", shiftX ) );
+		actions.add( new KeyAction( "Topology/Rasterization Mode", "setTopologyRenderMode", EditWidget.widgetType.EnumValue, false, T, Topology.TopologyRenderMode.getNames(), T, "Mode in which to rasterize topologie. (the topology squish value is used in chain and ramp types)", shiftX ) );
 		actions.add( new KeyAction( "Topology/Squish Value", "setTopologySquishValue", EditWidget.widgetType.FloatValue, false, T,  null , T, "Parameter that controls the feedback scaling used when generating chain and ramp topology layer rasterization modes", x ) );
 		actions.add( new KeyAction( "Topology/Num Centers for Multipoint", "setNumCentersMultiPoint", EditWidget.widgetType.IntValue, false, T, null, T, "Number of points to use when generating multipoint topology types", ctrlShiftZ ) );
 		actions.add( new KeyAction( "Topology/Enable Processing", "setDoWarp", EditWidget.widgetType.BooleanValue, false, T, null, T, "Enable or disable processing of topology warp/automata layer", ctrlShiftT ) );
 		actions.add( new KeyAction( "Topology/Power Parameter", "setCurrentTopologyPower", EditWidget.widgetType.FloatValue, false, T, null, T, "Topology generation power parameter", ctrlM ) );
 		actions.add( new KeyAction( "Topology/Main Parameter", "setCurrentTopologyParam", EditWidget.widgetType.FloatValue, false, T, null, T, "Main topology generation parameter", shiftL ) );
-		actions.add( new KeyAction( "Topology/Set Generator", "setTopologyGeneratorMode", EditWidget.widgetType.EnumValue, false, T , (Object[]) Topology.TopologyGeneratorMode.getNames() , T, "Set the next type of topology to generate", shiftG ) );
+		actions.add( new KeyAction( "Topology/Set Generator", "setTopologyGeneratorMode", EditWidget.widgetType.EnumValue, false, T , Topology.TopologyGeneratorMode.getNames(), T, "Set the next type of topology to generate", shiftG ) );
 		
 		//Tool
 		actions.add( new KeyAction( "Tool/Edit Mode", "setToolEditMode", EditWidget.widgetType.BooleanValue, false, L , null, T, "Tool1D editing mode", altT ) );
@@ -384,9 +393,10 @@ class TilerKeyMap
 		
 		//Scroll Rate/Set
 		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.0", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, zeroFloat, T, "Set the currentlevel parameter to 0.0", k0 ) );
-		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.1", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, point1Float, T, "Set the currentlevel parameter to 0.1", k1 ) );
-		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.2", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, point2Float, T, "Set the currentlevel parameter to 0.2", k2 ) );
-		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.3", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, point3Float, T, "Set the currentlevel parameter to 0.3", k3 ) );
+		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.025", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, ptOTwoFiveFloat, T, "Set the currentlevel parameter to 0.025", k1 ) );
+		actions.add( new KeyAction( "Scroll Rate/Set/Set 1.0", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, oneFloat, T, "Set the currentlevel parameter to 1.0", shiftk1 ) );
+		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.08", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, ptOEightFloat, T, "Set the currentlevel parameter to 0.08", k2 ) );
+		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.25", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, quarterFloat, T, "Set the currentlevel parameter to 0.25", k3 ) );
 		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.4", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, point4Float, T, "Set the currentlevel parameter to 0.4", k4 ) );
 		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.5", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, point5Float, T, "Set the currentlevel parameter to 0.5", k5 ) );
 		actions.add( new KeyAction( "Scroll Rate/Set/Set 0.6", "setCurrentLevel", EditWidget.widgetType.FloatValue, true, T, point6Float, T, "Set the currentlevel parameter to 0.6", k6 ) );
@@ -421,7 +431,7 @@ class TilerKeyMap
 		//	System.out.println( st );
 		//}
 		
-		KeyAction tabMenuAction = new KeyAction( "", "postTabMenu", EditWidget.widgetType.MenuValue, false, K, (Object[]) methodList, T, "Tab menu for actions", tab );
+		KeyAction tabMenuAction = new KeyAction( "", "postTabMenu", EditWidget.widgetType.MenuValue, false, K, methodList, T, "Tab menu for actions", tab );
 		keymap.put( tab, tabMenuAction );
 		
 	}

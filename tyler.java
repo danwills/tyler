@@ -50,19 +50,14 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-//import Tiler;
-
-
-
-
 public class tyler extends JPanel implements KeyListener
 {
     static JFrame frame;
     static Window aWindow;
 	static Tiler atiler;
 	
-	static int tilerSizeX = 512;
-	static int tilerSizeY = 512;
+	static final int tilerSizeX = 512;
+	static final int tilerSizeY = 512;
 	static Dimension tilerDimension = new Dimension( tilerSizeX, tilerSizeY );
 	
     static String metal= "Metal";

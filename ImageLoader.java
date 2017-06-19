@@ -167,7 +167,10 @@ class ImageLoader implements Runnable, ImageObserver
 			//when run exits what happens to the thread??
 			fresh = true;
 			//it dies I guess.. so while (true)
-		} else {Thread.currentThread().setPriority(Thread.MIN_PRIORITY); Thread.currentThread().yield();}
+		} else {
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY); 
+			Thread.currentThread().yield();
+		}
 	}
 
 	public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height)

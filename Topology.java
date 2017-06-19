@@ -26,9 +26,10 @@ import java.io.*;
   * Particle trajectory topologies. Particles with spawn/death policies that create topology.
   * mapped: 
   * 	particle number - how many to emit from each cell
+  *     particle velocity - direction of travel
   * 	particle speed - how fast they are moving
   * 	particle decay probablility - the chance that spawn or terminate/create topology will occur
-  * 	topology creation probability - control whether/mow much to create connections
+  * 	topology creation probability - control whether/how much to create connections
   * 	particle drag - with multiplier, mapped control of particle slowdown/accelerate
   * 	particle spawn number/branch depth limit - max number of spawns
   * 	particle initial rotation/rotation noise level 
@@ -683,186 +684,191 @@ public final class Topology
 	
 	public void generateTopologyFromSettings( TopologyGenerationSettings t )
 	{
-		switch (t.topologygeneratormode)
+		if ( t != null )
 		{
-			case LinearVector :
+			switch (t.topologygeneratormode)
 			{
-				this.setVectorTopology(( (t.basePointX - t.topologyWidth/2) * t.currenttopologyparam),((t.ys[0] - t.topologyHeight/2) * t.currenttopologyparam), t.generatetopologymapped, t.extractormapf ,0,0);
-				break;
-			}
-			case Zoom:
-			{
-				this.setPointZoomTopology( (int)(t.basePointX), (int)(t.basePointY), (double)-t.currenttopologyparam/10,(double)-t.currenttopologyparam/10,t.generatetopologymapped,t.extractormapf,0,true,0);
-				break;
-			}
-			case Spin:
-			{
-				//this.setPointSpinTopology( (int)(t.basePointX]), (int)(t.basePointY), t.currenttopologyparam, t.generatetopologymapped, t.extractormapf, 0, true, 0);
-				break;
-			}
-			case Radial:
-			{
-				this.setPointRadialTopology( (int)(t.basePointX), (int)(t.basePointY), -t.currenttopologyparam, t.powers[0], t.generatetopologymapped, t.extractormapf,0,true,0);
-				break;
-			}
-			case MultiRadial :
-			{
-				this.setMultiPointRadialTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
-				break;
-			}
-			case Voronoi :
-			{
-				this.setMultiPointVoronoiTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
-				break;
-			}
-			case VoronoiCell :
-			{
-				this.setMultiPointCellTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
-				break;
-			}
-			case VoronoiSpinCell :
-			{
-				this.setMultiPointSpinCellTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
-				break;
-			}
-			case Spiral :
-			{
-				this.setPointSpiralTopology((int)t.basePointX, (int)t.basePointY, t.currenttopologyparam, t.powers[0], t.generatetopologymapped, t.extractormapf,0.0f,true,0);
-				break;
-			}
-	
-			case MultiSpiral :
-			{
-				this.setMultiPointSpiralTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped,t.extractormapf,0.0f,true,0);
-				break;
-			}
-			case Sinusoidal :
-			{
-				float rxfreq = randex.nextFloat() * (float) t.currenttopologyparam;
-				float ryfreq = randex.nextFloat() * (float) t.currenttopologyparam;
-				float rxphase = randex.nextFloat() * (2.0f * (float)Math.PI);
-				float ryphase = randex.nextFloat() * (2.0f * (float)Math.PI);
-				float rxamp = t.xmouse - t.topologyWidth/2;
-				float ryamp = t.ymouse - t.topologyHeight/2;
-	
-				this.setSinusTopology(rxfreq,rxamp,rxphase,ryfreq,ryamp,ryphase,0,false,true);
-				break;
-			}
-	
-			case Fourier :
-			{
-				this.setFourierTopology(t.topologyWidth/2, t.topologyHeight/2, 0, 10+(int)t.currenttopologyparam,t.generatetopologymapped,t.extractormapf, true, 0);
-				break;
-			}
-	
-			case Foo :
-			{
-				this.setFooTopology(t.topologyWidth/2, t.topologyHeight/2, 0, t.currenttopologyparam, t.powers[0], 10, t.generatetopologymapped, t.extractormapf, true, 0);
-				break;
-			}
-	
-			case InvertedRadial :
-			{
-				this.setPointInverseHorseshoeTopology((int)(t.basePointX), (int)(t.basePointY), t.currenttopologyparam, t.generatetopologymapped, t.extractormapf,0,true,0);
-				break;
-			}
-			
-			case Refraction :
-			{
-				//not yet.. no map
-				this.setRefractionTopology( t.extractormapf,(float) t.currenttopologyparam, true, 0);
-				//output("refraction topology not implemented yet.");
-				break;
-			}
-			
-			case VectorRotation :
-			{
-				//not yet.. no map
-				this.setVectorRotationTopology(((t.basePointX)-(t.topologyWidth/2.0f))/4.0f,(t.basePointY-(t.topologyHeight/2.0f))/4.0f,t.extractormapf, t.currenttopologyparam, true, 0);
-				//output("vector rotation toology not implemented yet.");
-				break;
-			}
-			
-			case RandomNeighborhood :
-			{
-				this.setRandomTopology((float)t.currenttopologyparam,0, t.generatetopologymapped, t.extractormapf, 0);
-				break;
-			}
-			
-			case PlusNeighborhood :
-			{
-				this.setPlusTopology();
-				//output("plus topology not implemented yet.");
-				break;
-			}
-			
-			case BooleanMatrixNeighborhood:
-			{
-				//default to centered for the moment ;P
-				this.setBooleanMatrixTopology( t.booleanmatrix, t.booleanmatrixsize, t.booleanmatrixsize, t.booleanmatrixsize/2, t.booleanmatrixsize/2 );  
-				break;
-			}
-			
-			case LifeNeighborhood :
-			{
-				//nope
-				this.setLifeTopology(true);
-				break;
-			}
-			
-			case RandomIFS :
-			{
-				for (int i = 0; i < t.numwarplayers; i++)
+				case LinearVector :
 				{
-					boolean rb1 = (randex.nextInt() > 0);
-					boolean rb2 = (randex.nextInt() > 0);
-					boolean rb3 = (randex.nextInt() > 0);
-					this.setIFSQuarterLayerTopology(Math.abs(randex.nextInt() % t.topologyWidth),Math.abs(randex.nextInt() % t.topologyHeight),rb1,rb2,rb3,false,true,null,0,i);
+					this.setVectorTopology(( (t.basePointX - t.topologyWidth/2) * t.currenttopologyparam),((t.ys[0] - t.topologyHeight/2) * t.currenttopologyparam), t.generatetopologymapped, t.extractormapf ,0,0);
+					break;
 				}
-				break;
+				case Zoom:
+				{
+					this.setPointZoomTopology( (int)(t.basePointX), (int)(t.basePointY), (double)-t.currenttopologyparam/10,(double)-t.currenttopologyparam/10,t.generatetopologymapped,t.extractormapf,0,true,0);
+					break;
+				}
+				case Spin:
+				{
+					//this.setPointSpinTopology( (int)(t.basePointX]), (int)(t.basePointY), t.currenttopologyparam, t.generatetopologymapped, t.extractormapf, 0, true, 0);
+					break;
+				}
+				case Radial:
+				{
+					this.setPointRadialTopology( (int)(t.basePointX), (int)(t.basePointY), -t.currenttopologyparam, t.powers[0], t.generatetopologymapped, t.extractormapf,0,true,0);
+					break;
+				}
+				case MultiRadial :
+				{
+					this.setMultiPointRadialTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
+					break;
+				}
+				case Voronoi :
+				{
+					this.setMultiPointVoronoiTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
+					break;
+				}
+				case VoronoiCell :
+				{
+					this.setMultiPointCellTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
+					break;
+				}
+				case VoronoiSpinCell :
+				{
+					this.setMultiPointSpinCellTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped, t.extractormapf,0.0f,true,0);
+					break;
+				}
+				case Spiral :
+				{
+					this.setPointSpiralTopology((int)t.basePointX, (int)t.basePointY, t.currenttopologyparam, t.powers[0], t.generatetopologymapped, t.extractormapf,0.0f,true,0);
+					break;
+				}
+
+				case MultiSpiral :
+				{
+					this.setMultiPointSpiralTopology(t.xs, t.ys, t.levels, t.powers, t.generatetopologymapped,t.extractormapf,0.0f,true,0);
+					break;
+				}
+				case Sinusoidal :
+				{
+					float rxfreq = randex.nextFloat() * (float) t.currenttopologyparam;
+					float ryfreq = randex.nextFloat() * (float) t.currenttopologyparam;
+					float rxphase = randex.nextFloat() * (2.0f * (float)Math.PI);
+					float ryphase = randex.nextFloat() * (2.0f * (float)Math.PI);
+					float rxamp = t.xmouse - t.topologyWidth/2;
+					float ryamp = t.ymouse - t.topologyHeight/2;
+
+					this.setSinusTopology(rxfreq,rxamp,rxphase,ryfreq,ryamp,ryphase,0,false,true);
+					break;
+				}
+
+				case Fourier :
+				{
+					this.setFourierTopology(t.topologyWidth/2, t.topologyHeight/2, 0, 10+(int)t.currenttopologyparam,t.generatetopologymapped,t.extractormapf, true, 0);
+					break;
+				}
+
+				case Foo :
+				{
+					this.setFooTopology(t.topologyWidth/2, t.topologyHeight/2, 0, t.currenttopologyparam, t.powers[0], 10, t.generatetopologymapped, t.extractormapf, true, 0);
+					break;
+				}
+
+				case InvertedRadial :
+				{
+					this.setPointInverseHorseshoeTopology((int)(t.basePointX), (int)(t.basePointY), t.currenttopologyparam, t.generatetopologymapped, t.extractormapf,0,true,0);
+					break;
+				}
+
+				case Refraction :
+				{
+					//not yet.. no map
+					this.setRefractionTopology( t.extractormapf,(float) t.currenttopologyparam, true, 0);
+					//output("refraction topology not implemented yet.");
+					break;
+				}
+
+				case VectorRotation :
+				{
+					//not yet.. no map
+					this.setVectorRotationTopology(((t.basePointX)-(t.topologyWidth/2.0f))/4.0f,(t.basePointY-(t.topologyHeight/2.0f))/4.0f,t.extractormapf, t.currenttopologyparam, true, 0);
+					//output("vector rotation toology not implemented yet.");
+					break;
+				}
+
+				case RandomNeighborhood :
+				{
+					this.setRandomTopology((float)t.currenttopologyparam,0, t.generatetopologymapped, t.extractormapf, 0);
+					break;
+				}
+
+				case PlusNeighborhood :
+				{
+					this.setPlusTopology();
+					//output("plus topology not implemented yet.");
+					break;
+				}
+
+				case BooleanMatrixNeighborhood:
+				{
+					//default to centered for the moment ;P
+					this.setBooleanMatrixTopology( t.booleanmatrix, t.booleanmatrixsize, t.booleanmatrixsize, t.booleanmatrixsize/2, t.booleanmatrixsize/2 );  
+					break;
+				}
+
+				case LifeNeighborhood :
+				{
+					//nope
+					this.setLifeTopology(true);
+					break;
+				}
+
+				case RandomIFS :
+				{
+					for (int i = 0; i < t.numwarplayers; i++)
+					{
+						boolean rb1 = (randex.nextInt() > 0);
+						boolean rb2 = (randex.nextInt() > 0);
+						boolean rb3 = (randex.nextInt() > 0);
+						this.setIFSQuarterLayerTopology(Math.abs(randex.nextInt() % t.topologyWidth),Math.abs(randex.nextInt() % t.topologyHeight),rb1,rb2,rb3,false,true,null,0,i);
+					}
+					break;
+				}
+
+				case JuliaFractal :
+				{
+					this.setPointJuliaTopology(t.basePointX + t.topologyWidth, t.basePointY + t.topologyHeight, (int) t.currenttopologyparam, (float)t.powers[0], t.generatetopologymapped, t.extractormapf,0,true,0);
+					break;
+				}
+
+				case MandelbrotFractal :
+				{
+					this.setPointMandelTopology(t.basePointX, t.basePointY, (int) t.currenttopologyparam, (float) t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
+					break;
+				}
+
+				case BarnsleyJuliaFractal :
+				{
+					this.setPointBarnsleyJuliaTopology(t.basePointX + t.topologyWidth/2, t.basePointY + t.topologyHeight/2, 0, 2.0f, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
+					break;
+				}
+
+				case BarnsleyMandelbrotFractal :
+				{
+					this.setPointBarnsleyMandelTopology(t.basePointX + t.topologyWidth, t.basePointY + t.topologyHeight, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
+					break;
+				}
+
+				case LambdaFractal :
+				{
+					this.setPointLambdaTopology(t.basePointX + t.topologyWidth, t.basePointY + t.topologyHeight, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
+					break;
+				}
+
+				case PerspectivePlane :
+				{
+					this.setPerspectivePlaneTopology((int)t.basePointX, (int)t.basePointY, t.currenttopologyparam/10, t.currenttopologyparam/10, false,null,true,0);
+					break;
+				}
+
+				case FractalNoise :
+				{
+					this.setFractalNoiseTopology(t.basePointX, t.basePointY, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
+					break;
+				}
 			}
-			
-			case JuliaFractal :
-			{
-				this.setPointJuliaTopology(t.basePointX + t.topologyWidth, t.basePointY + t.topologyHeight, (int) t.currenttopologyparam, (float)t.powers[0], t.generatetopologymapped, t.extractormapf,0,true,0);
-				break;
-			}
-			
-			case MandelbrotFractal :
-			{
-				this.setPointMandelTopology(t.basePointX, t.basePointY, (int) t.currenttopologyparam, (float) t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
-				break;
-			}
-			
-			case BarnsleyJuliaFractal :
-			{
-				this.setPointBarnsleyJuliaTopology(t.basePointX + t.topologyWidth/2, t.basePointY + t.topologyHeight/2, 0, 2.0f, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
-				break;
-			}
-			
-			case BarnsleyMandelbrotFractal :
-			{
-				this.setPointBarnsleyMandelTopology(t.basePointX + t.topologyWidth, t.basePointY + t.topologyHeight, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
-				break;
-			}
-			
-			case LambdaFractal :
-			{
-				this.setPointLambdaTopology(t.basePointX + t.topologyWidth, t.basePointY + t.topologyHeight, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
-				break;
-			}
-			
-			case PerspectivePlane :
-			{
-				this.setPerspectivePlaneTopology((int)t.basePointX, (int)t.basePointY, t.currenttopologyparam/10, t.currenttopologyparam/10, false,null,true,0);
-				break;
-			}
-			
-			case FractalNoise :
-			{
-				this.setFractalNoiseTopology(t.basePointX, t.basePointY, (int) t.currenttopologyparam,  (float)t.powers[0], t.generatetopologymapped, t.extractormapf, 0,true,0);
-				break;
-			}
+		} else {
+			System.out.println("topology render settings aren't ready yet!");
 		}
 	}
 	
@@ -3749,7 +3755,7 @@ public final class Topology
 			//assumes space is brightest at highest addresses, this may need 'adjusting' ;).
 			float lev = ((float)inputs[i][0]/(float)flatlength) * 256.0f;
 			int ilev = (int) lev;
-			dest[i] = MiniPixelTools.makePackedGrey(ilev);
+			dest[i] = PixelTools.makePackedGrey(ilev);
 		}
 		isProcessing = false;
 	}
@@ -3812,7 +3818,7 @@ public final class Topology
 				gaccum = ((gaccum * alva) >> 8) + ((((meval >> 8) & 0xff) * invalv) >> 8) + 1;
 				baccum = ((baccum * alva) >> 8) + ((((meval     ) & 0xff) * invalv) >> 8) + 1;
 			} else {}
-			dest[insert] = MiniPixelTools.pack(0xff,raccum,gaccum,baccum);
+			dest[insert] = PixelTools.pack(0xff,raccum,gaccum,baccum);
 		}
 		isProcessing = false;
 	}
@@ -4522,7 +4528,7 @@ public final class Topology
 		{
 			for (int insert = 0; insert < flatlength; insert++) 
 			{ 
-				dest[insert] = MiniPixelTools.pixelAlphaBlend(src[inputs[insert][0]],dest[insert]);
+				dest[insert] = PixelTools.pixelAlphaBlend(src[inputs[insert][0]],dest[insert]);
 			}
 		} else {
 			System.out.println("Tried to apply topology to wrong sized array"); 
@@ -4540,7 +4546,7 @@ public final class Topology
 		{
 			for (int insert = 0; insert < flatlength; insert++) 
 			{ 
-				dest[insert] = MiniPixelTools.blendColors(src[inputs[insert][layer]],dest[insert],alpha[insert]);
+				dest[insert] = PixelTools.blendColors(src[inputs[insert][layer]],dest[insert],alpha[insert]);
 			}
 		} else {
 			System.out.println("Tried to apply topology to wrong sized array"); 
@@ -4559,7 +4565,7 @@ public final class Topology
 			for (int insert = 0; insert < flatlength; insert++) 
 			{
 				//should check the input exists
-				dest[insert] = MiniPixelTools.blendColors(src[inputs[insert][layer]],dest[insert],alpha[inputs[insert][layer]]);
+				dest[insert] = PixelTools.blendColors(src[inputs[insert][layer]],dest[insert],alpha[inputs[insert][layer]]);
 			}
 		} else {
 			System.out.println("Tried to apply topology to wrong sized array"); 
@@ -4613,7 +4619,7 @@ public final class Topology
 				bbit = ((bbit * alph) >> 8) + ((((meval     ) & 0xff) * invalph) >> 8);
 			}
 			
-			dest[i] = MiniPixelTools.pack(src[i] & 0xff000000,rbit,gbit,bbit);
+			dest[i] = PixelTools.pack(src[i] & 0xff000000,rbit,gbit,bbit);
 		}
 		isProcessing = false;
 	}
