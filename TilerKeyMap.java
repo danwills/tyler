@@ -431,9 +431,8 @@ class TilerKeyMap
 		//	System.out.println( st );
 		//}
 		
-		KeyAction tabMenuAction = new KeyAction( "", "postTabMenu", EditWidget.widgetType.MenuValue, false, K, methodList, T, "Tab menu for actions", tab );
+		KeyAction tabMenuAction = new KeyAction( "This Menu", "postTabMenu", EditWidget.widgetType.MenuValue, false, K, methodList, T, "Tab menu for actions", tab );
 		keymap.put( tab, tabMenuAction );
-		
 	}
 	
 	public void postTabMenu( String action )

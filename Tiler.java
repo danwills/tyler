@@ -191,7 +191,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	float deltaAngle = 0.0F;
 	float pixelDeltaAngle = 0.0F;
 	float deltaAmp = 1.0f;
-	float topologyresfactor = 2.0f;
+	float topologyresfactor = 1.0f;
 	
 	//private MouseGestures mouseGestures = new MouseGestures();
 	
@@ -426,7 +426,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 
 	String savename = "tyler";
 	int saveincrement = 0;
-	int saveWhichBuffer = 1;
+	int saveWhichBuffer = 0;
 	boolean continuoussave = false;
 	int saveframespacing = -1;
 	boolean continuouspixelgrab = false;
@@ -666,7 +666,9 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 
 		pixelaccess = true; //grab the pixels the first time...
 		loadImage( imagenames[ currentimage ] );
+        
 		MiniPixelTools.grabPixels(tile,bufferpixels,masterpixel);
+        
 		masterpixel.newPixels(0,0,bufferdimension.width,bufferdimension.height);
 
 		defaultfont = new Font("Verdana",Font.PLAIN,32);
@@ -1020,7 +1022,9 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				int pbybit = (int) ( ( bufferdimension.height ) / 2.0f);
 				
 				//use scaled copy of masterpixel?
-				Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * 2), (int)( bufferdimension.height / scalepixelbuffer * 2), Image.SCALE_FAST );
+				// Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * 2), (int)( bufferdimension.height / scalepixelbuffer * 2), Image.SCALE_FAST );
+                Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_AREA_AVERAGING );
+                //Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_SMOOTH );
 				MiniPixelTools.grabPixelRectangle(bufferimageScaled, bufferpixels, 0, 0, (int)(bufferdimension.width) ,(int)(bufferdimension.height), masterpixel);
 		}
 			
@@ -1574,6 +1578,11 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 					topologylayer.nextFrameInlineBlend(bufferpixels,processbuffer,warpwithalpha,extractormap);
 					break;
 				}
+                case contrasty :
+                {
+					topologylayer.nextFrameContrastyBlend(bufferpixels,processbuffer,warpwithalpha,extractormap);
+					break;
+				}
 				case averageRule :
 				{
 					topologylayer.nextFrameInlineBlendWithRule(bufferpixels,processbuffer,toolrule.getFloatHarvest(), toolrule.getColorHarvest(), false, 1.0f, warpwithalpha,extractormap);
@@ -1824,30 +1833,30 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		        	Graphics2D big = bi.createGraphics();
 		        	big.drawImage( bufferimage, 0, 0, this );
 		        	bufferimage.flush();
-		        } else /*if (saveWhichBuffer == 1)*/ {
+		    } else /*if (saveWhichBuffer == 1)*/ {
 		        	bi = new BufferedImage( bufferdimension.width, bufferdimension.height, BufferedImage.TYPE_INT_RGB );
 		        	Graphics2D big = bi.createGraphics();
 		        	big.setComposite( AlphaComposite.getInstance( AlphaComposite.SRC ) );
 		        	big.drawImage( pixelbuffer, 0, 0, this );
 		        	pixelbuffer.flush();
-		        }
+		    }
 		
-		        NumberFormat numf = new DecimalFormat( "000000" );
-				String imagesavename = savename + "." + numf.format( saveincrement ) + ".jpg";
-				output( "Saving buffer to file: " + imagesavename + "." );
-				File file = new File( "savedImages", imagesavename );
-				saveincrement += 1;
-				
-				FileOutputStream out = new FileOutputStream( file );
-				
-				// Updated to newer, ImageIO-based way of writing..
-				ImageIO.write(bi,"jpg",out);
-				
-		        //JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
-		        //JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(bi);
-		        //param.setQuality(1.0f, false);
-		        //encoder.setJPEGEncodeParam(param);
-		        //encoder.encode(bi);
+            NumberFormat numf = new DecimalFormat( "000000" );
+            String imagesavename = savename + "." + numf.format( saveincrement ) + ".jpg";
+            output( "Saving buffer to file: " + imagesavename + "." );
+            File file = new File( imagesavename );
+            saveincrement += 1;
+
+            FileOutputStream out = new FileOutputStream( file );
+
+            // Updated to newer, ImageIO-based way of writing..
+            ImageIO.write(bi,"jpg",out);
+
+            //JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
+            //JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(bi);
+            //param.setQuality(1.0f, false);
+            //encoder.setJPEGEncodeParam(param);
+            //encoder.encode(bi);
 		
 			//spin = (Math.PI/2.0)*(((float)(bufferdimension.width/2 - mouseloc.x)/(float)bufferdimension.width)) +
 			//   (2*Math.PI)*(((float)(bufferdimension.height/2 - mouseloc.y)/(float)bufferdimension.height));
@@ -2385,17 +2394,20 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
                     output("Loading image " + currentimage);
                     loadImage(imagenames[currentimage]);
 			} else {
-                System.out.println( "YO!" );
+                // System.out.println( "YO!" );
                 //currentimage = (currentimage + 1) % numimages;
                 // post tab menu
                 String[] methodList = keymap.getKeyToolStrings();
-                
+                for ( String method : methodList )
+                {
+                    System.out.println( method );
+                }
                 EditWidget tabEditWidget = new EditWidget( EditWidget.widgetType.MenuValue, "postTabMenu", keymap, methodList, e.getX(), e.getY(), EditWidget.widgetDrawMode.Default, widgetresultscale, Tiler.bgcolor, Tiler.midcolor, Tiler.fgcolor, (Component) this);
                 addWidget( tabEditWidget );
                 //KeyAction tabMenuAction = new KeyAction( "", "postTabMenu", EditWidget.widgetType.MenuValue, false, K, methodList, T, "Tab menu for actions", tab );
                 //keymap.put( tab, tabMenuAction );
                 //keymap.postTabMenu( "" );
-                System.out.println( "B'OH!" );
+                // System.out.println( "B'OH!" );
             }
 		}
 		

@@ -115,7 +115,10 @@ public final class Topology
 	public enum TopologyBlendMode
 	{
 		average,
+        contrasty,
 		lumiDifference,
+        // boost the options here!, contrasty-average, balanced-subtracty
+        // median, smooth sharpen-y, random neighbour
 		absoluteAdd,
 		averageRule,
 		averageRuleColor,
@@ -3905,6 +3908,81 @@ public final class Topology
 		isProcessing = false;
 	}
 	
+    public void nextFrameContrastyBlend(int[] src, int dest[], boolean withalpha, int[] alpha)
+	{
+		isProcessing = true;
+		//does life from state -> nxstate then swaps nxstate & state.
+		int aaccum, raccum, gaccum, baccum, destr, destg, destb, desta;
+		//int accum = 0;
+		//int unpak[] = new int[4];
+		//int meval = 0;
+		//int mepak[] = new int[4];
+		int flatlength = src.length;
+		setData(src);
+		int numinputs = maxInputs();
+		int pixelcatcher;
+		
+		for (int insert = 0; insert < flatlength; insert++) 
+		{
+			//System.out.println("About to get input pixels");
+			//getInputData(insert, pixelcatcher);
+			final int numinp = inputs[insert].length;
+			pixelcatcher = 0;
+			int meval = dest[insert];
+			int alva, alvadjusted, invalva;
+			raccum = 0;
+			gaccum = 0;
+			baccum = 0;
+			
+			if (withalpha)
+			{
+				alva = alpha[insert];
+				invalva = 0xff - alva;
+			} else {
+				alva = 0xff;	
+				invalva = 0xff - alva;
+			}
+			
+			desta = (meval >> 24) & 0xff;
+			destr = (((meval >> 16) & 0xff) * invalva) >> 8;
+			destg = (((meval >>  8) & 0xff) * invalva) >> 8;
+			destb = (((meval      ) & 0xff) * invalva) >> 8;
+			
+			
+			for (int k = 0; k < numinp; k++)
+			{
+				pixelcatcher = src[inputs[insert][k]];
+				raccum += ((pixelcatcher >> 16) & 0xff);
+				gaccum += ((pixelcatcher >>  8) & 0xff);
+				baccum += ((pixelcatcher      ) & 0xff);
+			}
+			
+			//make averages
+			raccum /= numinp; //r,
+			gaccum /= numinp; //g,
+			baccum /= numinp; //b.
+			
+            raccum = (int)((raccum - 128) * 1.1) + 128;
+            gaccum = (int)((gaccum - 128) * 1.1) + 128;
+            baccum = (int)((baccum - 128) * 1.1) + 128;
+            
+            raccum = clamp(0,0xff,raccum);
+			gaccum = clamp(0,0xff,gaccum);
+			baccum = clamp(0,0xff,baccum);
+            
+			raccum = (alva * raccum) >> 8;
+			gaccum = (alva * gaccum) >> 8;
+			baccum = (alva * baccum) >> 8; 
+			
+			//accum[0] = (accum[0] > 0xff) ? 0xff : (accum[0] < 0) ? r : accum[0];
+			
+			dest[insert] = (desta << 24) + ( ((raccum + destr) & 0xff) << 16) +
+			                            ( ((gaccum + destg) & 0xff) <<  8) +
+			                            ( ((baccum + destb) & 0xff)      );
+		}
+		isProcessing = false;
+	}
+    
 	public void nextFrameInlineBlendWithRule(int[] src, int dest[], float[] liferule, int[] colorliferule, boolean useColor, float rulemultiplier, boolean withalpha, int[] alpha)
 	{
 		isProcessing = true;
