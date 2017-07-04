@@ -107,7 +107,7 @@ public class ParticleSystem
 	boolean channeldrag = false;
 	float channeldraglevel = 1.0f;
 	boolean channelspin = true;
-	double channelspinlevel = -0.001f;
+	double channelspinlevel = 0.121f;
 	boolean speeddeath = true;
 	float baseLFOfreq = 0.03f;
 	float speedmax = 256.0f;

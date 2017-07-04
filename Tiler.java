@@ -191,8 +191,11 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	float deltaAngle = 0.0F;
 	float pixelDeltaAngle = 0.0F;
 	float deltaAmp = 1.0f;
-	float topologyresfactor = 1.0f;
-	
+	float topologyresfactor = 2.0f;
+    float overallresfactor = 2.0f;
+	float scalepixelbuffer = 2.0f;
+    String saveFormatStr = "png";
+    
 	//private MouseGestures mouseGestures = new MouseGestures();
 	
 	public enum MouseCursorMode
@@ -406,7 +409,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	Topology.TopologyBlendMode topologyNextFrameMode = Topology.TopologyBlendMode.average;
 	int topologyoversampling = 0;
 	boolean resizeon = true;
-	float scalepixelbuffer = 1.0f;
+	
 	Dimension bufferdimension;
 	Dimension screendimension;
 	Image bufferimage;
@@ -1023,9 +1026,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				
 				//use scaled copy of masterpixel?
 				// Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * 2), (int)( bufferdimension.height / scalepixelbuffer * 2), Image.SCALE_FAST );
-                Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_AREA_AVERAGING );
-                //Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_SMOOTH );
-				MiniPixelTools.grabPixelRectangle(bufferimageScaled, bufferpixels, 0, 0, (int)(bufferdimension.width) ,(int)(bufferdimension.height), masterpixel);
+                // Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_AREA_AVERAGING );
+                // Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_SMOOTH );
+                Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * overallresfactor), (int)( bufferdimension.height / scalepixelbuffer * overallresfactor), Image.SCALE_FAST );
+				MiniPixelTools.grabPixelRectangle( bufferimageScaled, bufferpixels, 0, 0, (int)(bufferdimension.width) ,(int)(bufferdimension.height), masterpixel );
 		}
 			
 			if ( screenclearalpha >= 1.0f )
@@ -1097,11 +1101,12 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		    Float2D roDelta = new Float2D( delta.x, delta.y );
 	        roDelta.rotate( deltaAngle );
 	        roDelta.scale( deltaAmp );
-	        	
+            
+            // Advect flooppos when not in dragging-mode
 	        if ( !draggingTilePosition ) flooppos.translate( roDelta.x, roDelta.y );
 
 	    	buffercontext.setPaintMode();
-	    	buffercontext.setFont(defaultfont);
+	    	buffercontext.setFont( defaultfont );
 
 	    	if (pixelaccess)
 	    	{
@@ -1255,8 +1260,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
     				if (scalepixelbuffer != 1.0f) 
     					pixelbufferScaled = pixelbuffer.getScaledInstance( (int)( bufferdimension.width * scalepixelbuffer ), (int)( bufferdimension.height * scalepixelbuffer ), Image.SCALE_FAST );
     					
-				int pbxbit = (int) ( ( scalepixelbuffer * bufferdimension.width ) / 2.0f); 
-				int pbybit = (int) ( ( scalepixelbuffer * bufferdimension.height ) / 2.0f);
+				int pbxbit = (int) ( ( scalepixelbuffer * bufferdimension.width ) / overallresfactor); 
+				int pbybit = (int) ( ( scalepixelbuffer * bufferdimension.height ) / overallresfactor);
 				
 				drawImage( pixelbufferScaled, buffercontext, pixelbufferloc.x + wigglepos.x - pbxbit , pixelbufferloc.y + wigglepos.y - pbybit, bufferdimension, screendimension);
 								
@@ -1568,7 +1573,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		{
 			switch ( topologyNextFrameMode )
 			{
-				// Queue topologyprocessor thread to process sub-frame buckets of topology,
+				// Queue topologyprocessor threads to process sub-frame buckets of topology,
 				// potentially also clobber/kill the current topologyprocessor queue if there's still things pending
 				// then just wait for all buckets to be finished... 
 				// should be fast-ish I hope (at least faster than single-threaded) if there's enough threads!?
@@ -1580,7 +1585,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				}
                 case contrasty :
                 {
-					topologylayer.nextFrameContrastyBlend(bufferpixels,processbuffer,warpwithalpha,extractormap);
+					topologylayer.nextFrameContrastyBlend( bufferpixels, processbuffer,warpwithalpha,extractormap );
 					break;
 				}
 				case averageRule :
@@ -1842,15 +1847,15 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		    }
 		
             NumberFormat numf = new DecimalFormat( "000000" );
-            String imagesavename = savename + "." + numf.format( saveincrement ) + ".jpg";
-            output( "Saving buffer to file: " + imagesavename + "." );
+            String imagesavename = savename + "." + numf.format( saveincrement ) + "." + saveFormatStr;
+            output( "Saving buffer to file: " + imagesavename );
             File file = new File( imagesavename );
             saveincrement += 1;
 
             FileOutputStream out = new FileOutputStream( file );
 
             // Updated to newer, ImageIO-based way of writing..
-            ImageIO.write(bi,"jpg",out);
+            ImageIO.write( bi, saveFormatStr, out );
 
             //JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
             //JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(bi);
@@ -2124,7 +2129,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	}
 	
 	public void setCurrentLevel( float towhat )
-	{ 
+	{
+        // Correct the loopPos with respect to currentLevel
+        flooppos.scale( currentlevel / towhat );
+            
 		float prevcurrentlevel = currentlevel;
         currentlevel = towhat;
 		output("currentLevel is now: " + currentlevel );
@@ -2584,7 +2592,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 					int offsetY = 0;
 					
 					// TODO: make dragging preserve the offset when engaged!
-					// so you can move without dragging, then drag with current offset!
+					// so you can move without dragging, then drag with current offset! - DONE!
 					if ( draggingPos == null )
 					{
 						float[] widgetPos = awidget.getPosition(); 

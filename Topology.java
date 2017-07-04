@@ -3927,6 +3927,8 @@ public final class Topology
 			//System.out.println("About to get input pixels");
 			//getInputData(insert, pixelcatcher);
 			final int numinp = inputs[insert].length;
+            //int numinp = inputs[insert].length;
+            
 			pixelcatcher = 0;
 			int meval = dest[insert];
 			int alva, alvadjusted, invalva;
@@ -4229,16 +4231,21 @@ public final class Topology
 	{
 		isProcessing = true;
 		//does life from state -> nxstate then swaps nxstate & state.
-		int aaccum, raccum, gaccum, baccum, destr, destg, destb, desta;
+		//int aaccum, raccum, gaccum, baccum, destr, destg, destb, desta;
+        
+        // At least don't destroy destA! though this may be meaningless or wrong..
+        // maybe srca would be more important to preserve?
+        int raccum, gaccum, baccum, destr, destg, destb, desta;
 		//int accum = 0;
 		//int unpak[] = new int[4];
 		//int meval = 0;
 		//int mepak[] = new int[4];
 		int flatlength = src.length;
 		setData(src);
-		int numinputs = maxInputs();
+		//int numinputs = maxInputs();
 		int pixelcatcher;
-		
+		int decay = 0xe0;
+        
 		for (int insert = 0; insert < flatlength; insert++) 
 		{
 			//System.out.println("About to get input pixels");
@@ -4246,19 +4253,19 @@ public final class Topology
 			final int numinp = inputs[insert].length;
 			pixelcatcher = 0;
 			int meval = dest[insert];
-			int alva, alvadjusted, invalva;
+			//int alva, alvadjusted, invalva;
 			raccum = 0;
 			gaccum = 0;
 			baccum = 0;
 			
-			if (withalpha)
+			/*if (withalpha)
 			{
 				alva = alpha[insert];
 				invalva = 0xff - alva;
 			} else {
 				alva = 0xff;	
 				invalva = 0xff - alva;
-			}
+			}*/
 			
 			desta = (meval >> 24) & 0xff;
 			destr = ((meval >> 16) & 0xff);
@@ -4315,21 +4322,26 @@ public final class Topology
 
 			
 			lumidiff = Math.min(0xff, Math.max(0, lumidiff));
-			raccum = Math.min(0xff, Math.max(0, raccum));
-			gaccum = Math.min(0xff, Math.max(0, gaccum));
-			baccum= Math.min(0xff, Math.max(0, baccum));
+			
+            //raccum = Math.min(0xff, Math.max(0, raccum));
+			//gaccum = Math.min(0xff, Math.max(0, gaccum));
+			//baccum= Math.min(0xff, Math.max(0, baccum));
 						
 			raccum = ((lumidiff * raccum) >> 8) + (((0xff - lumidiff) * destr) >> 8);
 			gaccum = ((lumidiff * gaccum) >> 8) + (((0xff - lumidiff) * destg) >> 8);
 			baccum = ((lumidiff * baccum) >> 8) + (((0xff - lumidiff) * destb) >> 8);
 			
+			destr = Math.min(0xff, Math.max(0,((raccum + destr) * decay ) >> 8));
+			destg = Math.min(0xff, Math.max(0,((gaccum + destg) * decay ) >> 8));
+			destb = Math.min(0xff, Math.max(0,((baccum + destb) * decay ) >> 8));
+            
+            //destr = ((raccum * alva) >> 8) + ((destr * invalva) >> 8);
+			//destg = ((gaccum * alva) >> 8) + ((destg * invalva) >> 8);
+			//destb = ((baccum * alva) >> 8) + ((destb * invalva) >> 8);
 			
+            
 			
-			destr   = ((raccum * alva) >> 8) + ((destr * invalva) >> 8);
-			destg = ((gaccum * alva) >> 8) + ((destg * invalva) >> 8);
-			destb = ((baccum * alva) >> 8) + ((destb * invalva) >> 8);
-			
-			dest[ insert ] = ((0xff << 24) | (destr << 16) | (destg<< 8) | destb);	
+			dest[ insert ] = ((desta << 24) | (destr << 16) | (destg<< 8) | destb);	
 			                            
 		}
 		isProcessing = false;

@@ -1741,7 +1741,9 @@ public final class MiniPixelTools implements ImageObserver
 		int alpha;
 		int invalpha;
 		int destlength = dest.length;
-		
+		// int decay = 0x106;
+        int decay = 0x0fe;
+        
 		for (int i = 0; i < destlength; i++)
 		{
 			destpixel = dest[i];
@@ -1763,7 +1765,7 @@ public final class MiniPixelTools implements ImageObserver
 			
 			lumidiff = (srclumi < destlumi) ? destlumi - srclumi : srclumi - destlumi;
 			
-			//mix by difference in lumi
+			//mix by difference in lumi, apply decay
 			
 			srcpixelr = ((lumidiff * srcpixelr) >> 8) + (((0xff - lumidiff) * destpixelr) >> 8);
 			srcpixelg = ((lumidiff * srcpixelg) >> 8) + (((0xff - lumidiff) * destpixelg) >> 8);
@@ -1772,10 +1774,15 @@ public final class MiniPixelTools implements ImageObserver
 			alpha = ((srcpixel >> 24) & 0x000000ff);
 			invalpha = 0xff - alpha;
 			
-			redbit   = ((srcpixelr * alpha) >> 8) + ((destpixelr * invalpha) >> 8);
-			greenbit = ((srcpixelg * alpha) >> 8) + ((destpixelg * invalpha) >> 8);
-			bluebit  = ((srcpixelb * alpha) >> 8) + ((destpixelb * invalpha) >> 8);
+            redbit   = (decay * (((srcpixelr * alpha) >> 8) + ((destpixelr * invalpha) >> 8)) >> 8);
+			greenbit = (decay * (((srcpixelg * alpha) >> 8) + ((destpixelg * invalpha) >> 8)) >> 8);
+			bluebit  = (decay * (((srcpixelb * alpha) >> 8) + ((destpixelb * invalpha) >> 8)) >> 8);
 			
+            // clamp, what the heck!?
+            redbit = (redbit < 0) ? 0 : (redbit > 0xff) ? 0xff : redbit;
+            greenbit = (greenbit < 0) ? 0 : (greenbit > 0xff) ? 0xff : greenbit;
+            bluebit = (bluebit < 0) ? 0 : (bluebit > 0xff) ? 0xff : bluebit;
+            
 			dest[i] = ((0xff << 24) | (redbit << 16) | (greenbit << 8) | bluebit);	
 		}
 	}
@@ -2405,7 +2412,9 @@ public final class MiniPixelTools implements ImageObserver
 		{
 			PixelGrabber pixelmaker = new PixelGrabber(img, 0, 0, w, h, dest, 0, w );
 			try
-			{pixelmaker.grabPixels();} 
+			{
+                pixelmaker.grabPixels();
+            }
 			catch (InterruptedException e) 
 			{
 				System.err.println("Pixel grab failed or was interrupted.");
