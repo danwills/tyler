@@ -22,7 +22,7 @@ import java.io.*;
 //jpeg writing only for now poo
 //import com.sun.image.codec.jpeg.*;
 import javax.imageio.ImageIO;
-
+import java.util.Collections;
 //
 // tylerEngine - a node-based game editing engine:
 //
@@ -195,6 +195,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
     float overallresfactor = 2.0f;
 	float scalepixelbuffer = 2.0f;
     String saveFormatStr = "png";
+    //String saveFormatStr = "jpg";
     
 	//private MouseGestures mouseGestures = new MouseGestures();
 	
@@ -406,7 +407,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	boolean warpon = true;
 	boolean dowarp = true;
 	boolean warpwithalpha = false;
-	Topology.TopologyBlendMode topologyNextFrameMode = Topology.TopologyBlendMode.average;
+	Topology.TopologyBlendMode topologyNextFrameMode = Topology.TopologyBlendMode.averageThreaded;
 	int topologyoversampling = 0;
 	boolean resizeon = true;
 	
@@ -431,6 +432,15 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	int saveincrement = 0;
 	int saveWhichBuffer = 0;
 	boolean continuoussave = false;
+    
+    //Vector<ImageSaveThread> imageSaveThreads;
+    java.util.List<ImageSaveThread> imageSaveThreads;
+    
+    //Vector<TopologyProcessorThread> topologyProcessorThreads;
+    java.util.List<TopologyProcessorThread> topologyProcessorThreads;
+    // better be greater than zero, that's all I'm gonna say :P
+    int numTopologyProcessorThreads = 84;
+    
 	int saveframespacing = -1;
 	boolean continuouspixelgrab = false;
 	boolean continuousmapgrab = false;
@@ -465,7 +475,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	Graphics2D buffercontext;
 	Graphics2D buffercontexta;
 	Font defaultfont;
-	int sleepdelay = 50;
+    
+    // sleepdelay now represents nanoseconds
+    // don't really want to delay at all!
+	int sleepdelay = 100;
 
 	public static Color bgcolor = java.awt.Color.black;
 	public  static Color midcolor = java.awt.Color.darkGray;
@@ -652,7 +665,6 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		MiniPixelTools.init( );
 		MiniPixelTools.setChannelOffset(20.0f);
 		MiniPixelTools.setChannelMultiplier(4.0f);
-		sleepdelay = 1;
 		
 		initializedPercent = 0.4;
 		
@@ -738,7 +750,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		Calendar calendar = Calendar.getInstance();
 		java.util.Date now = calendar.getTime();
 		DateFormat datef = DateFormat.getInstance();
-		String nowstr = datef.format( now ).replace("/","-").replace(" ","_");
+		String nowstr = datef.format( now ).replace("/","_").replace(" ","_").replace(":","_");
 		System.out.println("The time is now: " + nowstr);
 		setSaveString("tyler_" + nowstr);
 		
@@ -759,7 +771,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		KeyboardFocusManager currKFM = KeyboardFocusManager.getCurrentKeyboardFocusManager();
 		currKFM.addKeyEventDispatcher(this);
 		
- 		// disable auto-binding for tab to cycle panes in the AWT since we're not using that but we'd like to use the tab key pls
+ 		// disable auto-binding for tab to cycle panes in the AWT since we're not using that but we'd like to use the tab key pls!!!
+        // This generates a **harmless** compile-time warning because of the cast from empty-set to Vector-of-AWTKeyStroke's
 		currKFM.setDefaultFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET );
 		currKFM.setDefaultFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET );
 
@@ -771,6 +784,17 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		output("Turning ON 'Continuous Pixel Grab'.. (Ctrl-Shift-w to Toggle)");
 		setContinuousPixelGrab( true );
 		
+        imageSaveThreads = Collections.synchronizedList(new ArrayList<ImageSaveThread>());
+        //new Vector<ImageSaveThread>();
+        // 
+        
+        // let's do this on demand instead?, yep.. but not yet!
+        //topologyProcessorThreads = Collections.synchronizedList(new ArrayList<TopologyProcessorThread>());
+        topologyProcessorThreads = new ArrayList<TopologyProcessorThread>();
+        addTopologyProcessorThreads( numTopologyProcessorThreads );
+        output( "Created this number of topology-processing threads: " + topologyProcessorThreads.size() );
+        
+            //Vector<TopologyProcessorThread>();
 		//setPixelAlpha( 33 );
 		
 		//mouseGestures = new MouseGestures();
@@ -790,8 +814,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		output("--------");
 		initializedPercent = 1.0;
 		
-		try{
-		  Thread.currentThread().sleep(10);
+		try
+        {
+            // Nano-sleep
+            Thread.currentThread().sleep(0l,1);
 		}
 		catch(InterruptedException ie){ }
 		
@@ -931,11 +957,11 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		while (motionthread == me)
         	{
 			repaint();
-			
-        	try
-			{
-        		motionthread.sleep( sleepdelay );
-			} catch (InterruptedException e) {} //break;
+			motionthread.yield();
+        	//try
+			//{
+        	//	motionthread.sleep( 0l, sleepdelay );
+			//} catch (InterruptedException e) {} //break;
 		}
 	}
 
@@ -1005,7 +1031,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			}
 		} else {
 		
-			//set antialiasing if possible...
+			//set antialiasing / filtering if possible...
 			context.setFont( defaultfont );
 
 			Dimension d = getSize();
@@ -1567,6 +1593,44 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		return mouseloc;
 	}
 	
+    // Want to create a pool of threads in advance, that can be updated with new
+    // topologylayer/etc where needed, but that can be kicked-off without recreating the thread.
+    public void addTopologyProcessorThreads( int nThreads )
+    {
+        int topoWidth = topologylayer.width;
+        int topoHeight = topologylayer.height;
+
+        for ( int ix=0; ix<nThreads; ix++)
+        {
+            // special case dividing into topoWidth-width boxes
+            int thisStartOffset = topoHeight/nThreads * ix * topoWidth;
+            int thisScanLength = topoWidth;
+            int thisNScans = topoHeight / nThreads;
+            int thisStride = topoWidth;
+            
+            TopologyProcessorThread newThread = new TopologyProcessorThread( topologylayer, bufferpixels, processbuffer, 
+                thisStartOffset, thisScanLength, thisNScans, thisStride, ix );
+            
+            // Seems like the ordering of the next 2 lines might be important one day
+            newThread.start();
+            topologyProcessorThreads.add( newThread );
+        }
+    }
+    
+    // To be used, for example, when the topology gets regenerated!
+    public void updateTopologyProcessorThreads()
+    {
+        synchronized( topologyProcessorThreads )
+        {
+            Iterator<TopologyProcessorThread> tptIter = topologyProcessorThreads.iterator();
+            while ( tptIter.hasNext() )
+            {
+                TopologyProcessorThread tpt = tptIter.next();
+                tpt.setTopologySrcAndDest( topologylayer, bufferpixels, processbuffer );
+            }
+        }
+    }
+    
 	public void doCurrentWarp()
 	{
 		for (int i = 0; i < 1 + topologyoversampling; i++)
@@ -1577,12 +1641,53 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				// potentially also clobber/kill the current topologyprocessor queue if there's still things pending
 				// then just wait for all buckets to be finished... 
 				// should be fast-ish I hope (at least faster than single-threaded) if there's enough threads!?
-				
+                //
+                //
+				// Add blackpoint and scaling and maybe whitepoint and power, to all nextFrame modes.
+                // or just multiplier/blackPt.
+                
 				case average :
 				{
-					topologylayer.nextFrameInlineBlend(bufferpixels,processbuffer,warpwithalpha,extractormap);
+					topologylayer.nextFrameInlineBlend( bufferpixels, processbuffer, warpwithalpha, extractormap );
 					break;
 				}
+                case averageThreaded :
+                {       
+                    // System.out.println( "workin' at all!" );
+                    // create N threads (new Runnable) to do subsections (now happens earlier)
+                    // and wake the threads by modifying isFinished.
+                    // topologylayer.nextFrameInlineBlendSubSection( bufferpixels, processbuffer, 
+                    // warpwithalpha, extractormap, startOffset, scanLength, nScans, stride );
+                    //
+                    // initial splits could be startOffsets at 1/numThreads, nScans at totalScans / nThreads
+                    // with scanLength at the whole width
+                    
+                    // gotta synchronize while iterating this list,
+                    // we are going to be modifying the thread objects!
+                    synchronized( topologyProcessorThreads )
+                    {
+                        Iterator<TopologyProcessorThread> tptIter = topologyProcessorThreads.iterator();
+                        while ( tptIter.hasNext() )
+                        {
+                            TopologyProcessorThread tpt = tptIter.next();
+                            // don't queue if already running
+                            if ( tpt.isFinished )
+                            {
+                                tpt.setUnFinished();
+                                tpt.interrupt();
+                            }
+                        }
+                    }
+                    // we need to not-queue any duing this time
+                    waitForAllTopologyProcessorThreads();
+                    
+                    // System.out.println("Finished Waiting for all topology processor threads!");
+                    
+                    //reInit now, as they alllllll finistzd (finished, Sic.)
+                    // topologyProcessorThreads = new Vector<TopologyProcessorThread>();
+                    
+                    break;
+                }
                 case contrasty :
                 {
 					topologylayer.nextFrameContrastyBlend( bufferpixels, processbuffer,warpwithalpha,extractormap );
@@ -1826,52 +1931,184 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			}
 		}
 	}
-
+    
+    public boolean allTopologyProcessorThreadsFinished()
+    {
+        for ( TopologyProcessorThread tpt : topologyProcessorThreads )
+        {
+            if ( !tpt.isFinished )
+            {
+                return false;
+            }
+        }
+        // alllllll done!
+        return true;
+    }
+    
+    //This is for calling in systemWideExit, so that the image writes get a chance to finish.
+    public void waitForAllTopologyProcessorThreads()
+    {
+        long startTime = System.currentTimeMillis(); //fetch starting time thx2 Ankit Rustagi on stackExchange!
+        
+        // Exit if more than 5 seconds have elapsed, that *should* hopefully be more than enough.
+        // There are some assumptions being made here but the threaded-image-save system is going to be bad
+        // anyway if the saving can't keep up with the generation (ie use lotsa ram?)
+        while( (!allTopologyProcessorThreadsFinished()) && ( System.currentTimeMillis() - startTime ) < 5000 ) 
+        {
+            // clear finished ones, hopefully ensuring the vector will eventually be empty..
+            // Might eventually need to clear crashed-ones too.. just need to know the failure-modes.
+            // But should plan for at least write-permission not-granted and/or disk-full.
+            // cleanTopologyProcessorThreads();
+            //try{
+                // mili-nap
+                //Thread.currentThread().sleep(1);
+                // nano-nap
+                //Thread.currentThread().sleep(0l,100);
+                // let 'em at it!?
+                
+       		//}
+            //catch(InterruptedException ie) { }
+            Thread.currentThread().yield();
+        }
+    }
+    
+    public void cleanSaveThreads()
+    {
+        //output( "The number of image save threads before removing finished ones, is:" + imageSaveThreads.size() );
+        Vector<ImageSaveThread> removeFinishedThreads = new Vector<ImageSaveThread>();
+        
+        synchronized( imageSaveThreads ) 
+        {
+            Iterator istIter = imageSaveThreads.iterator();
+            while( istIter.hasNext() )
+            {
+                
+                
+                ImageSaveThread ist = (ImageSaveThread) istIter.next();
+                if ( ist != null )
+                {
+                    if ( ist.isFinished )
+                    {
+                        output( "Queueing removal of thread from thread-pool of size: " + imageSaveThreads.size() );
+                        removeFinishedThreads.add( ist );
+                    }
+                }
+            }
+        }
+        
+        for ( ImageSaveThread ist : removeFinishedThreads )
+        {
+            imageSaveThreads.remove( ist );
+        }
+    }
+    
+    public void waitForAllImageSaveThreads()
+    {
+        long startTime = System.currentTimeMillis(); //fetch starting time thx2 Ankit Rustagi on stackExchange!
+        
+        // Exit if more than 8 seconds have elapsed, that *should* hopefully be more than enough.
+        // There are some assumptions being made here but the threaded-image-save system is going to be bad
+        // anyway if the saving can't keep up with the generation (ie use lotsa ram?)
+        while( (imageSaveThreads.size() > 0) && ( System.currentTimeMillis() - startTime ) < 8000 ) 
+        {
+            // clear finished ones, hopefully ensuring the vector will eventually be empty..
+            // Might eventually need to clear crashed-ones too.. just need to know the failure-modes.
+            // But should plan for at least write-permission not-granted and/or disk-full.
+            cleanSaveThreads();
+        }
+    }
+    
+    // Made the saving happen in another thread!!
+    //
+    // We still probably need to wait for this BufferedImage (indeed, turned out to be true!)
+    // but the actual save could definitely happen in a separate thread. - DONE
+    //
+    // This also leads to partially-written frames when you quit in the
+    // middle of saving.. so need to make quit wait for all the threads to finish! - DONE!
+    //
+    // Doing the bufferedImage part in the separate thread led to partial images.. so moved it back!
+    // To allow it, we could synchronize a lock on the obj till the draw is complete.
+    //
 	public synchronized boolean saveBuffer()
 	{
-		try {
-			BufferedImage bi;
-		
-			if (saveWhichBuffer == 0)
-			{
-				bi = new BufferedImage( screendimension.width, screendimension.height, BufferedImage.TYPE_INT_RGB );
-		        	Graphics2D big = bi.createGraphics();
-		        	big.drawImage( bufferimage, 0, 0, this );
-		        	bufferimage.flush();
-		    } else /*if (saveWhichBuffer == 1)*/ {
-		        	bi = new BufferedImage( bufferdimension.width, bufferdimension.height, BufferedImage.TYPE_INT_RGB );
-		        	Graphics2D big = bi.createGraphics();
-		        	big.setComposite( AlphaComposite.getInstance( AlphaComposite.SRC ) );
-		        	big.drawImage( pixelbuffer, 0, 0, this );
-		        	pixelbuffer.flush();
-		    }
-		
-            NumberFormat numf = new DecimalFormat( "000000" );
-            String imagesavename = savename + "." + numf.format( saveincrement ) + "." + saveFormatStr;
-            output( "Saving buffer to file: " + imagesavename );
-            File file = new File( imagesavename );
-            saveincrement += 1;
+		//try {
+        BufferedImage bi;
 
-            FileOutputStream out = new FileOutputStream( file );
+        //if ( saveWhichBuffer == 0 )
+        //{
+        //    bi = new BufferedImage( screendimension.width, screendimension.height, BufferedImage.TYPE_INT_RGB );
+        //    bi.setAccelerationPriority(1.0f);
+        //    Graphics2D big = bi.createGraphics();
+        //    big.drawImage( bufferimage, 0, 0, this );
+        //    bufferimage.flush();
+        //} else /*if (saveWhichBuffer == 1)*/ {
+        //    bi = new BufferedImage( bufferdimension.width, bufferdimension.height, BufferedImage.TYPE_INT_RGB );
+        //    bi.setAccelerationPriority(1.0f);
+        //    Graphics2D big = bi.createGraphics();
+        //    big.setComposite( AlphaComposite.getInstance( AlphaComposite.SRC ) );
+        //    big.drawImage( pixelbuffer, 0, 0, this );
+        //    pixelbuffer.flush();
+        //}
 
-            // Updated to newer, ImageIO-based way of writing..
-            ImageIO.write( bi, saveFormatStr, out );
+        NumberFormat numf = new DecimalFormat( "000000" );
+        String imagesavename = savename + "." + numf.format( saveincrement ) + "." + saveFormatStr;
+        output( "Saving buffer to file: " + imagesavename );
+        // bi.flush();
+        
+        int saveWidth,saveHeight;
+        Image imageToSave;
+        boolean saveAlpha;
+        
+        if ( saveWhichBuffer == 0 )
+        {
+            saveWidth = screendimension.width;
+            saveHeight = screendimension.height;
+            imageToSave = bufferimage;
+            saveAlpha = false;
+        } else {
+            saveWidth = bufferdimension.width;
+            saveHeight = bufferdimension.height;
+            imageToSave = pixelbuffer;
+            saveAlpha = true;
+        }
+        
+        bi = new BufferedImage( saveWidth, saveHeight, BufferedImage.TYPE_INT_RGB );
+        bi.setAccelerationPriority(1.0f);
+        
+        Graphics2D big = bi.createGraphics();
+        if ( saveAlpha ) 
+        {
+            big.setComposite( AlphaComposite.getInstance( AlphaComposite.SRC ) );
+        }
+        
+        big.drawImage( imageToSave, 0, 0, this );
+        imageToSave.flush(); //shouldn't it be the Graphics2D that gets flushed?? hurrr
+        
+        ImageSaveThread saveThread = new ImageSaveThread( imagesavename, bi );
+        // do this in the BACKGROUND!
+        saveThread.setPriority(Thread.MIN_PRIORITY);
+        saveThread.start();
+        
+        if ( imageSaveThreads.size() > 0 )
+        {   
+            cleanSaveThreads();
+        }
+        imageSaveThreads.add( saveThread );
+        
+        //File file = new File( imagesavename );
+        //FileOutputStream out = new FileOutputStream( file );
 
-            //JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
-            //JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(bi);
-            //param.setQuality(1.0f, false);
-            //encoder.setJPEGEncodeParam(param);
-            //encoder.encode(bi);
-		
-			//spin = (Math.PI/2.0)*(((float)(bufferdimension.width/2 - mouseloc.x)/(float)bufferdimension.width)) +
-			//   (2*Math.PI)*(((float)(bufferdimension.height/2 - mouseloc.y)/(float)bufferdimension.height));
-			//    output("particle spin set to " + currentlevel + ", which is about " + currentlevel/Math.PI + " of a pie");
-		} catch (java.io.IOException iox) {
+        // Updated to newer, ImageIO-based way of writing..
+        //ImageIO.write( bi, saveFormatStr, out );
+
+        saveincrement += 1;
+            
+		//} catch (java.io.IOException iox) {
 	
 			//save fuxx
-			System.err.println("IOException while trying to write image file");
-			return false;
-		}
+		//	System.err.println("IOException while trying to write image file");
+		//	return false;
+		//}
 	
 		//assume save went ok...
 		return true;
@@ -1914,10 +2151,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				powers[i] = currenttopologypower;
 			}
 			
-			TopologyGenerationSettings t = new TopologyGenerationSettings( bufferdimension.width, bufferdimension.height, currenttopologyparam, xs, ys, mouseloc.x, mouseloc.y, powers, levels, generatetopologymapped, numpoints, (mouseloc.x - pixelbufferloc.x) / scalepixelbuffer, (mouseloc.y -  pixelbufferloc.y) / scalepixelbuffer, numwarplayers, nextbooleanmatrixsize, currentbooleanmatrix, topologygeneratormode, topologyrendermode, extractormapf, topologysquishvalue );
+			TopologyGenerationSettings tgs = new TopologyGenerationSettings( bufferdimension.width, bufferdimension.height, currenttopologyparam, xs, ys, mouseloc.x, mouseloc.y, powers, levels, generatetopologymapped, numpoints, (mouseloc.x - pixelbufferloc.x) / scalepixelbuffer, (mouseloc.y -  pixelbufferloc.y) / scalepixelbuffer, numwarplayers, nextbooleanmatrixsize, currentbooleanmatrix, topologygeneratormode, topologyrendermode, extractormapf, topologysquishvalue );
 								
 			//TopologyGenerationThread 
-			topologyGenerationThread = new TopologyGenerationThread( t, bufferpixels, this );
+			topologyGenerationThread = new TopologyGenerationThread( tgs, bufferpixels, this );
 			output("Starting topologyGeneration thread");
 			//Thread tgThread = new Thread( topologyGenerationThread );
 			
@@ -1927,14 +2164,14 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			catch (Exception e)
 			{
 				output( e.toString() );
-				System.exit(0);
+				//System.exit(0); // seems a little harsh!
 			}
 			output("TopologyGeneration Thread started..");
 		} else {
 			
 			output("tried to queue topology generation when topology was already regenerating.. trying to kill thread (then give it another go).... .. ..");
 			
-			topologyGenerationThread.killThread( );
+			topologyGenerationThread.killThread();
 			topologyRegenerating = false;
 			topologyGenerationThread = null;
 		}
@@ -2265,6 +2502,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	
 	public void setTopologyNextFrameMode( int towhat )
 	{
+        output( "topologyNextFrameMode set to: " + topologyNextFrameMode );
 		topologyNextFrameMode = Topology.TopologyBlendMode.values()[ towhat ];
 	}
 	
@@ -2310,11 +2548,21 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			systemWideExit();
 		}
 	}
-			
+    
+	public void systemWideExitAfterNFrames( int nframes )
+    {
+        // currentFrame = etc;
+        // exitFrame = currentFrame + nframes;
+        // set a global exitframe at which systeam exit occurs.
+    }
+    
 	//very trusting to have this as a public method.. but anyway..
 	public void systemWideExit()
 	{
-		output("Tyler exiting, Bye!");
+		output("Tyler exiting!");
+        output("Waiting for other threads to end...");
+        waitForAllImageSaveThreads();
+        output("Bye!");
 		System.exit(0); 
 	}
 	
@@ -2478,7 +2726,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		}
 		
 		mousedown = true;
-		repaint();
+		//repaint();
 	}
 
 	public void mouseReleased(MouseEvent e)
@@ -2548,7 +2796,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		
 		                       
 		mousedown = true;
-		repaint();
+		//repaint();
 	}
 
 	public void mouseMoved(MouseEvent e)
@@ -2621,7 +2869,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		}
 		
 		mousedown = false;
-		repaint();
+		//repaint();
 
 	}
 
@@ -2796,35 +3044,5 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			return false;
 		}
 		return true;
-		//if ((infoflags & ImageObserver.ERROR) != 0)      output("ERROR flag registered in ImageUpdate");
-		//if ((infoflags & ImageObserver.FRAMEBITS) != 0)  output("FRAMEBITS flag registered in ImageUpdate");
-		//these may mean a new resize has begun. . .
-		//if ((infoflags & ImageObserver.HEIGHT) != 0)     output("HEIGHT flag registered in ImageUpdate");
-		//if ((infoflags & ImageObserver.PROPERTIES) != 0) output("PROPERTIES flag registered in ImageUpdate");
-
-		//if ((infoflags & ImageObserver.SOMEBITS) != 0)
-		//{
-			//output("SOMEBITS flag registered in ImageUpdate");
-			//if we can get an idea how far thru we are with this it would be good
-			//imagestatus++;
-		//}
-		//if ((infoflags & ImageObserver.WIDTH) != 0)
-		//{
-			//this may mean a new resize has begun. . .
-			//output("WIDTH flag registered in ImageUpdate");
-		//}
-
-		//output("flags " + Integer.toBinaryString(infoflags) + " registered in ImageUpdate");
-		//return true;
-		//if ((infoflags & ImageObserver.ALLBITS) != 0) output("ALLBITS flag registered in ImageUpdate");
-
-		//if ( ((infoflags & ImageObserver.WIDTH) != 0) && ((infoflags & ImageObserver.HEIGHT) != 0) )
-		//{
-		//	//grabPixels(img,pixelgrabdest,masterpixel);
-		//	return false; //stop notifying
-		//} else {
-		//	if ((infoflags & ImageObserver.ABORT) != 0) System.err.println("Error, could not grab pixels, Image load/production was aborted.");
-		//	return true; //keep waiting and keep notifying
-		//}
 	}
 }

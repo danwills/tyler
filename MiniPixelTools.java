@@ -1386,7 +1386,7 @@ public final class MiniPixelTools implements ImageObserver
 	}
 	
 	//Draw one image onto another, using the source alpha, assumes the two 
-	//images are the same size
+	//images are the same size destroys alpha in the dest if it exists (and sets 0xFF instead)
 	public final static void drawWithAlpha(int[] dest,int[] draw)
 	{	
 		int redbit;
@@ -1446,7 +1446,7 @@ public final class MiniPixelTools implements ImageObserver
 	}
 	
 	//max-composites one image onto another, using the source alpha, assumes the two 
-	//images are the same size
+	//images are the same size, destroys alpha in the dest if it exists (and sets 0xFF instead)
 	public final static void maxWithAlphaAndOffset(int[] dest,int[] draw, int offset)
 	{	
 		int redbit;

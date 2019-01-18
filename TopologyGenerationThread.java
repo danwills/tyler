@@ -34,16 +34,16 @@ public final class TopologyGenerationThread extends Thread
 		
 		if ((t.topologygeneratormode != Topology.TopologyGeneratorMode.PlusNeighborhood) && (t.topologygeneratormode != Topology.TopologyGeneratorMode.LifeNeighborhood) && (t.topologygeneratormode != Topology.TopologyGeneratorMode.RandomIFS))
 		{
-			parentTiler.output("selected rendermode is:" + t.topologyrendermode);
+			parentTiler.output("Selected rendermode is:" + t.topologyrendermode);
 			
 			switch ( t.topologyrendermode )
 			{
-				case DitheredMultilayer : { parentTiler.output("rendering dithered multitopology.."); break; }
-				case ChainMultilayer : { parentTiler.output("rendering chain multitopology..");  break; }
-				case RampMultilayer : { parentTiler.output("rendering ramp multitopology.."); break; }
-				case AbsoluteDitheredMultilayer : 	{ parentTiler.output("rendering absolute dithered multitopology.."); break; }
-				case AbsoluteChainMultilayer : { parentTiler.output("rendering absolute chain multitopology.."); 	break; }
-				case AbsoluteRampMultilayer : { parentTiler.output("rendering absolute ramp multitopology.."); break; }
+				case DitheredMultilayer : { parentTiler.output("Rendering dithered multitopology.."); break; }
+				case ChainMultilayer : { parentTiler.output("Rendering chain multitopology..");  break; }
+				case RampMultilayer : { parentTiler.output("Rendering ramp multitopology.."); break; }
+				case AbsoluteDitheredMultilayer : 	{ parentTiler.output("Rendering absolute dithered multitopology.."); break; }
+				case AbsoluteChainMultilayer : { parentTiler.output("Rendering absolute chain multitopology.."); 	break; }
+				case AbsoluteRampMultilayer : { parentTiler.output("Rendering absolute ramp multitopology.."); break; }
 			}
 		}
 		

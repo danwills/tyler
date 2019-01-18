@@ -553,7 +553,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 		
 		try { widgetmethod = methodowner.getClass().getMethod(methodname,parms); }
 		catch (NoSuchMethodException nsmx) { error = true; }// System.out.println("widget method " + methodname + "(" + parms[0].toString() + ") unexpectedly didn't exist, may have been static"); }
-		catch (SecurityException sx) { error = true; System.out.println("widget object method: " + methodname + "(" + parms[0].toString() + ") was unexpectedly private or protected."); }
+		catch (SecurityException sx) { error = true; System.out.println("Widget object method: " + methodname + "(" + parms[0].toString() + ") was unexpectedly private or protected."); }
 		
 		//try the backup plan, maybe the method was static, hey.. didn't think of that did ya?!? :)
 		// the method might also not have any parameters at all, in which case a Void.TYPE is not the right thing to use..
@@ -562,8 +562,8 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 			//System.out.println("Maybe the method was static, attempting cast. .");
 			try { widgetmethod = ((Class)methodowner).getMethod(methodname,parms);}
 			catch (ClassCastException snobbery) { error = true; /*System.out.println("initial cast of widget method object failed.. trying alternatives...");*/}
-			catch (NoSuchMethodException nsmx) { error = true; System.out.println("widget static method  " + methodname + "( " + parms[0].toString() + " ) unexpectedly didn't exist."); }
-			catch (SecurityException sx) { error = true; System.out.println("widget method  " + methodname + "( " + parms[0].toString() + " ) was unexpectedly private or protected."); }
+			catch (NoSuchMethodException nsmx) { error = true; System.out.println("Widget static method  " + methodname + "( " + parms[0].toString() + " ) unexpectedly didn't exist."); }
+			catch (SecurityException sx) { error = true; System.out.println("Widget method  " + methodname + "( " + parms[0].toString() + " ) was unexpectedly private or protected."); }
 			
 			try { 
 				
@@ -605,7 +605,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 				}
 			}
 			catch (ClassCastException snobbery) { error = true; System.out.println("Could not cast widget method object with no parameters.");}
-			catch (SecurityException sx) { error = true; System.out.println("widget method  " + methodname + "() was unexpectedly private or protected."); }
+			catch (SecurityException sx) { error = true; System.out.println("Widget method  " + methodname + "() was unexpectedly private or protected."); }
 		}		
 		
 		if (widgetmethod != null) 

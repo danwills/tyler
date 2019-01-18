@@ -115,6 +115,7 @@ public final class Topology
 	public enum TopologyBlendMode
 	{
 		average,
+        averageThreaded,
         contrasty,
 		lumiDifference,
         // boost the options here!, contrasty-average, balanced-subtracty
@@ -3908,6 +3909,105 @@ public final class Topology
 		isProcessing = false;
 	}
 	
+    // Add startOffset, scanLength, nScans and stride to allow use in processing 
+    // more than one sub-tile at once in multiple threads.
+    // Just offset and totalLength could be enough to split the work up,
+    // however that wouldn't allow tile/square regions per thread, 
+    // only chunks of full scanlines. So lets have nScans and stride too!
+    // Coz squares are nicer? :P (probably worse cache-coherency?! oh well, 
+    // eventually to be nicer to buckets-world!)
+    
+    public void nextFrameInlineBlendSubSection( int[] src, int dest[], int startOffset, int scanLength, int nScans, int stride, int threadIndex )
+	{
+        // System.out.println( "Processing with:" + startOffset + "," + scanLength + "," + nScans + "," + stride );
+		isProcessing = true;
+		//does life from state -> nxstate then swaps nxstate & state.
+		int aaccum, raccum, gaccum, baccum, destr, destg, destb, desta;
+		//int accum = 0;
+		//int unpak[] = new int[4];
+		//int meval = 0;
+		//int mepak[] = new int[4];
+		//int flatlength = src.length;
+		setData( src );
+		//int numinputs = maxInputs();
+		int pixelcatcher;
+        
+        for (int nScan=0; nScan<nScans; nScan++)
+        {
+            for (int insert=0; insert < scanLength; insert++) 
+            {
+                //System.out.println("About to get input pixels");
+    			//getInputData(insert, pixelcatcher);
+                //int realInsert = startOffset + nScan * stride;
+                //
+                //
+                // real realization: inputs could be from any other cell: might be hard to fully partition!!
+                // .. build a way to cache inputs?
+                //
+                // actually, no worries! can still function because whole inputs array is always there and
+                // can be read by all threads.
+                
+                // Make the real cell index, using startOffset and stride:
+                int realinsert = insert + startOffset + nScan * stride;
+                
+            	//pixelcatcher = 0;
+                
+                int meval = src[realinsert];
+                
+        		//raccum = 0;
+            	//gaccum = 0;
+                //baccum = 0;
+			
+    			// desta = (meval >> 24) & 0xff;
+                //destr = (meval >> 16) & 0xff;
+                //destg = (meval >>  8) & 0xff;
+                //destb = (meval      ) & 0xff;
+                
+                raccum = 0; //(meval >> 16) & 0xff;
+                gaccum = 0; //(meval >>  8) & 0xff;
+                baccum = 0; //(meval      ) & 0xff;
+                
+                final int numinp = inputs[realinsert].length;
+                
+                // One print per pixel?! Needless to say this doesn't really help
+                //System.out.println("--------------");
+                //System.out.println("realinsert:" + realinsert);
+                //System.out.println("threadIndex:" + threadIndex);
+                
+                for (int k = 0; k < numinp; k++)
+                {
+                    // this should eventually be done using methods accumulateRed(), Green(), 
+                    // Blue(), and accumulateAvg() that are optimized to work on arrays.
+                    // unpack(pixelcatcher[k],colaccum); //make sure this is optimised	
+                    pixelcatcher = src[inputs[realinsert][k]];
+
+                    //if (weighted) aaccum += (pixelcatcher >> 24) & 0xff; //albhahahaaa
+
+                    raccum += ((pixelcatcher >> 16) & 0xff);
+                    gaccum += ((pixelcatcher >>  8) & 0xff);
+                    baccum += ((pixelcatcher      ) & 0xff);
+                }
+
+                //unpack(meval,mepak);
+                //int mxinp = max(accum);
+                //mxinp = applyRule(mxinp, false);
+                //int addit = rule.applyRule(accum, numinputs);
+
+                //make averages
+                raccum /= numinp; //r,
+                gaccum /= numinp; //g,
+                baccum /= numinp; //b.
+                
+                //accum[0] = (accum[0] > 0xff) ? 0xff : (accum[0] < 0) ? r : accum[0];
+
+                dest[realinsert] = (0xff << 24) + ( ( raccum & 0xff ) << 16 ) +
+                                                  ( ( gaccum & 0xff ) <<  8 ) +
+                                                  ( ( baccum & 0xff )       );
+            } // end scan loop
+		} // end nScans loop
+		isProcessing = false;
+	}
+    
     public void nextFrameContrastyBlend(int[] src, int dest[], boolean withalpha, int[] alpha)
 	{
 		isProcessing = true;
@@ -4244,7 +4344,7 @@ public final class Topology
 		setData(src);
 		//int numinputs = maxInputs();
 		int pixelcatcher;
-		int decay = 0xe0;
+		int decay = 0x7e;
         
 		for (int insert = 0; insert < flatlength; insert++) 
 		{

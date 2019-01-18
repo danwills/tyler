@@ -97,9 +97,9 @@ class ImageLoader implements Runnable, ImageObserver
 
 	public void run()
 	{
-		while (true) if (!fresh)
+		while ( true ) if (!fresh)
 		{
-			Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
+			// Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
 			//output("ImageLoader thread starting");
 			//output("final dimensions: " + height + "," + width);
 			if (pixels == null) pixels = new int[height * width];
@@ -168,8 +168,9 @@ class ImageLoader implements Runnable, ImageObserver
 			fresh = true;
 			//it dies I guess.. so while (true)
 		} else {
-			Thread.currentThread().setPriority(Thread.MIN_PRIORITY); 
+			//Thread.currentThread().setPriority(Thread.MIN_PRIORITY); 
 			Thread.currentThread().yield();
+            //this.yield();
 		}
 	}
 

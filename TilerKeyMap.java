@@ -29,32 +29,32 @@ class TilerKeyMap
 		
 		//declare key values
 		
-		long a =	(((long)KeyEvent.VK_A ) << 32);
-		long b =	(((long)KeyEvent.VK_B ) << 32);
-		long c =	(((long)KeyEvent.VK_C ) << 32);
-		long d =	(((long)KeyEvent.VK_D ) << 32);
-		long e =	(((long)KeyEvent.VK_E ) << 32);
-		long f =	(((long)KeyEvent.VK_F ) << 32);
-		long g =	(((long)KeyEvent.VK_G ) << 32);
-		long h =	(((long)KeyEvent.VK_H ) << 32);
-		long i =	(((long)KeyEvent.VK_I ) << 32);
-		long j =	(((long)KeyEvent.VK_J ) << 32);
-		long k =	(((long)KeyEvent.VK_K ) << 32);
-		long l =	(((long)KeyEvent.VK_L ) << 32);
-		long m =	(((long)KeyEvent.VK_M ) << 32);
-		long n =	(((long)KeyEvent.VK_N ) << 32);
-		long o =	(((long)KeyEvent.VK_O ) << 32);
-		long p =	(((long)KeyEvent.VK_P ) << 32);
-		long q =	(((long)KeyEvent.VK_Q ) << 32);
-		long r =	(((long)KeyEvent.VK_R ) << 32);
-		long s =	(((long)KeyEvent.VK_S ) << 32);
-		long t =	(((long)KeyEvent.VK_T ) << 32);
-		long u =	(((long)KeyEvent.VK_U ) << 32);
-		long v =	(((long)KeyEvent.VK_V ) << 32);
-		long w =	(((long)KeyEvent.VK_W ) << 32);
-		long x =	(((long)KeyEvent.VK_X ) << 32);
-		long y =	(((long)KeyEvent.VK_Y ) << 32);
-		long z =	(((long)KeyEvent.VK_Z ) << 32);
+		long a = (((long)KeyEvent.VK_A ) << 32);
+		long b = (((long)KeyEvent.VK_B ) << 32);
+		long c = (((long)KeyEvent.VK_C ) << 32);
+		long d = (((long)KeyEvent.VK_D ) << 32);
+		long e = (((long)KeyEvent.VK_E ) << 32);
+		long f = (((long)KeyEvent.VK_F ) << 32);
+		long g = (((long)KeyEvent.VK_G ) << 32);
+		long h = (((long)KeyEvent.VK_H ) << 32);
+		long i = (((long)KeyEvent.VK_I ) << 32);
+		long j = (((long)KeyEvent.VK_J ) << 32);
+		long k = (((long)KeyEvent.VK_K ) << 32);
+		long l = (((long)KeyEvent.VK_L ) << 32);
+		long m = (((long)KeyEvent.VK_M ) << 32);
+		long n = (((long)KeyEvent.VK_N ) << 32);
+		long o = (((long)KeyEvent.VK_O ) << 32);
+		long p = (((long)KeyEvent.VK_P ) << 32);
+		long q = (((long)KeyEvent.VK_Q ) << 32);
+		long r = (((long)KeyEvent.VK_R ) << 32);
+		long s = (((long)KeyEvent.VK_S ) << 32);
+		long t = (((long)KeyEvent.VK_T ) << 32);
+		long u = (((long)KeyEvent.VK_U ) << 32);
+		long v = (((long)KeyEvent.VK_V ) << 32);
+		long w = (((long)KeyEvent.VK_W ) << 32);
+		long x = (((long)KeyEvent.VK_X ) << 32);
+		long y = (((long)KeyEvent.VK_Y ) << 32);
+		long z = (((long)KeyEvent.VK_Z ) << 32);
 		
 		//won't worry about the numbers' shifted values for the moment..
 		long k1 = (((long)KeyEvent.VK_1)<< 32);
@@ -158,49 +158,50 @@ class TilerKeyMap
 		long ctrlP = addCtrl(  p );
 		
 		long ctrlShiftQ = addCtrl( addShift( q ) );
-		long  ctrlQ = addCtrl( q );
-		long  altQ = addAlt( q );
-		long  shiftQ = addShift( q );
+        long ctrlAltQ = addCtrl( addAlt( q ) );
+		long ctrlQ = addCtrl( q );
+		long altQ = addAlt( q );
+		long shiftQ = addShift( q );
 		
-		long  ctrlShiftR = addCtrl( addShift( r ) );
-		long  ctrlR = addCtrl(  r  );
-		long  altR = addAlt(  r  );
-		long  shiftR = addShift(  r  );
+		long ctrlShiftR = addCtrl( addShift( r ) );
+		long ctrlR = addCtrl( r );
+		long altR = addAlt( r );
+		long shiftR = addShift( r );
 		
-		long  ctrlShiftS = addCtrl( addShift(  s  ) );
-		long  ctrlS = addCtrl( s );
-		long  shiftS = addShift(  s  );
-		long  altS = addAlt(  s  );
+		long ctrlShiftS = addCtrl( addShift( s ) );
+		long ctrlS = addCtrl( s );
+		long shiftS = addShift( s );
+		long altS = addAlt( s );
 		
-		long  ctrlShiftT = addCtrl( addShift(  t  ) );
-		long  ctrlT = addCtrl( t );
-		long  shiftT = addShift(  t  );
+		long ctrlShiftT = addCtrl( addShift( t ) );
+		long ctrlT = addCtrl( t );
+		long shiftT = addShift( t );
 		long altT = addAlt( t );
 		long ctrlAltT = addCtrl( addAlt( t ) );
 		
-		long  ctrlShiftU = addCtrl( addShift(  u  ) );
-		long  ctrlU = addCtrl( u  );
-		long  shiftU = addShift( u  );
-		long  altU = addAlt( u  );
+		long ctrlShiftU = addCtrl( addShift( u ) );
+		long ctrlU = addCtrl( u );
+		long shiftU = addShift( u );
+		long altU = addAlt( u );
 		
-		long  ctrlShiftV = addCtrl( addShift(  v  ) );
-		long  ctrlV = addCtrl( v );
-		long  altShiftV = addAlt( addShift( v ) );
-		long  shiftV = addShift( v );
-		long  altV = addAlt( v );
+		long ctrlShiftV = addCtrl( addShift( v ) );
+		long ctrlV = addCtrl( v );
+		long altShiftV = addAlt( addShift( v ) );
+		long shiftV = addShift( v );
+		long altV = addAlt( v );
 		
-		long  ctrlShiftW = addCtrl( addShift(  w  ) );
-		long  ctrlW = addCtrl(  w  );
-		long  shiftW = addShift(  w  );
-		long  altW = addAlt(  w  );
+		long ctrlShiftW = addCtrl( addShift( w ) );
+		long ctrlW = addCtrl( w );
+		long shiftW = addShift( w );
+		long altW = addAlt( w );
 		
-		long  ctrlShiftX = addCtrl( addShift(  x  ) );
-		long shiftX =  addShift(  x  );
+		long ctrlShiftX = addCtrl( addShift( x ) );
+		long shiftX =  addShift( x );
 		
-		long  ctrlShiftZ = addCtrl( addShift(  z  ) );
-		long  shiftZ = addShift(  z  );
-		long  ctrlZ = addCtrl(  z );
-		long  altZ = addAlt(  z );
+		long ctrlShiftZ = addCtrl( addShift( z ) );
+		long shiftZ = addShift( z );
+		long ctrlZ = addCtrl( z );
+		long altZ = addAlt( z );
 		
 		long ctrlUp = addCtrl( up );
 		long ctrlDown = addCtrl( down );
@@ -281,6 +282,7 @@ class TilerKeyMap
 		//actions.add( new KeyAction( "Globalz/Quit", "systemWideExit", EditWidget.widgetType.NoValue, true, T, null, T, "Ctrl-Q detected, had enough have we?", ctrlQ ) );
 		//make it so you have to send it True
 		actions.add( new KeyAction( "Globalz/Quit", "systemWideExitWhenTrue", EditWidget.widgetType.BooleanValue, false, T, null, T, "Ctrl-Q detected, time to decide if we've had enough is it?", ctrlQ ) );
+        actions.add( new KeyAction( "Globalz/QuitAfterNFrames", "systemWideExitAfterNFrames", EditWidget.widgetType.IntValue, false, T, null, T, "Close the app after this many frames have been captured.", ctrlAltQ ) );
 		
 		
 		//Output
