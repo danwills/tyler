@@ -20,16 +20,16 @@ I've always been a massive fan of the demoscene (and realtime-graphics generally
 
 So, what can we do with Tyler? (for fun or experimentation!)
 
+* Tab or Right-click menu to access pretty much all actions, help and heaps of hotkeys, eg. hold Ctrl+Alt+Shift to move the menu around.
+* Full capture of 'vector' particles and UI components into the pixel-automata realm (can be disabled for speed too).
+* 2D Particles emitted from the mouse pointer, with quite intricate ways to control their size/motion/draw-method and color evolution/alpha blending.
 * Realtime pixel-feedback engine with various interesting ways to generate a warp or neighborhood for the feedback, including various fractals, noise, sines and an 11x11 boolean-matrix-based neighborhood generator.
 * Complex (too complex? mostly useless) color/LUT-based transformation/color blending methods for advancing the pixel-automata iterations with.
 * Idea of extracting a LUT from the image using a 'Tool' (along a line using a default extractor channel) and being able to then also edit and smooth the LUT values and use them in other parts of tyler (such as the pixel-neighbourhood-transfer-function and the particle color blend methods).
-* 2D Particles emitted from the mouse pointer, with quite intricate ways to control their size/motion/draw-method and color evolution/alpha blending.
-* Full capture of 'vector' particles and UI components into the pixel-automata realm (can be disabled for speed too).
-* Tab or Right-click menu to access pretty much all actions, help and heaps of hotkeys, eg. hold Ctrl+Alt+Shift to move the menu around.
 
-It's basically a particles and pixels playground, and I still think it's a cool place to tinker!
+It's basically a particles and pixels playground, and I still think it's a fun thing to tinker with! : )
 
-I have had some flickering issues with builds on some JDKs, but I think the newest .
+I have had some flickering issues with builds on some JDKs, but I think some recent commits hopefully fixes that.
 
 Anyone interested in adapting this code to run on Android and make it into a fast (glsl) fun pixel playground, or just to port it as-is in all its software-rendering-glory please contact me: gdanzo at gmail.com
 
