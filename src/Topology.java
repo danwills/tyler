@@ -117,7 +117,9 @@ public final class Topology
 		average,
         averageThreaded,
         contrasty,
+        contrastyThreaded,
 		lumiDifference,
+		lumiDifferenceThreaded,
         // boost the options here!, contrasty-average, balanced-subtracty
         // median, smooth sharpen-y, random neighbour
 		absoluteAdd,
@@ -3982,7 +3984,14 @@ public final class Topology
                     pixelcatcher = src[inputs[realinsert][k]];
 
                     //if (weighted) aaccum += (pixelcatcher >> 24) & 0xff; //albhahahaaa
-
+					
+					// Make this part able to do a few preset blend options to support
+					// most of the other interesting modes.. and so that they may all
+					// be run threaded.
+					// Do something similar for the /numinp below.. that supports
+					// things like max and median and so on.
+					// Consider storing each delta so that things can be recombined
+					// in more flexible ways afterwards.
                     raccum += ((pixelcatcher >> 16) & 0xff);
                     gaccum += ((pixelcatcher >>  8) & 0xff);
                     baccum += ((pixelcatcher      ) & 0xff);
@@ -3993,7 +4002,7 @@ public final class Topology
                 //mxinp = applyRule(mxinp, false);
                 //int addit = rule.applyRule(accum, numinputs);
 
-                //make averages
+                //make averages.. or other combinations
                 raccum /= numinp; //r,
                 gaccum /= numinp; //g,
                 baccum /= numinp; //b.
@@ -4085,6 +4094,55 @@ public final class Topology
 		isProcessing = false;
 	}
     
+	public void nextFrameInlineContrastyBlendSubSection( int[] src, int dest[], int startOffset, int scanLength, int nScans, int stride, int threadIndex )
+	{
+		isProcessing = true;
+		int aaccum, raccum, gaccum, baccum, destr, destg, destb, desta;
+		setData( src );
+		int pixelcatcher;
+        
+        for (int nScan=0; nScan<nScans; nScan++)
+        {
+            for (int insert=0; insert < scanLength; insert++) 
+            {
+                int realinsert = insert + startOffset + nScan * stride;
+                
+                int meval = src[realinsert];
+                                
+                raccum = 0;
+                gaccum = 0;
+                baccum = 0;
+                
+                final int numinp = inputs[realinsert].length;
+                
+                for (int k = 0; k < numinp; k++)
+                {
+                    pixelcatcher = src[inputs[realinsert][k]];
+
+                    raccum += ((pixelcatcher >> 16) & 0xff);
+                    gaccum += ((pixelcatcher >>  8) & 0xff);
+                    baccum += ((pixelcatcher      ) & 0xff);
+                }
+                raccum /= numinp; //r,
+                gaccum /= numinp; //g,
+                baccum /= numinp; //b.
+				
+                raccum = (int)((raccum - 128) * 1.1) + 128;
+            	gaccum = (int)((gaccum - 128) * 1.1) + 128;
+            	baccum = (int)((baccum - 128) * 1.1) + 128;
+            
+            	raccum = clamp(0,0xff,raccum);
+				gaccum = clamp(0,0xff,gaccum);
+				baccum = clamp(0,0xff,baccum);
+            					
+                dest[realinsert] = (0xff << 24) + ( ( raccum & 0xff ) << 16 ) +
+                                                  ( ( gaccum & 0xff ) <<  8 ) +
+                                                  ( ( baccum & 0xff )       );
+            } // end scan loop
+		} // end nScans loop
+		isProcessing = false;
+	}
+	
 	public void nextFrameInlineBlendWithRule(int[] src, int dest[], float[] liferule, int[] colorliferule, boolean useColor, float rulemultiplier, boolean withalpha, int[] alpha)
 	{
 		isProcessing = true;
@@ -4447,6 +4505,70 @@ public final class Topology
 		isProcessing = false;
 	}
 	
+    public void nextFrameInlineAnotherLumiDiffMixSubSection( int[] src, int dest[], int startOffset, int scanLength, int nScans, int stride, int threadIndex )
+	{
+		isProcessing = true;
+		int aaccum, raccum, gaccum, baccum, destr, destg, destb, desta;
+		setData( src );
+		int pixelcatcher;
+        int decay = 0x7e;
+		
+        for (int nScan=0; nScan<nScans; nScan++)
+        {
+            for (int insert=0; insert < scanLength; insert++) 
+            {
+                int realinsert = insert + startOffset + nScan * stride;
+                
+                int meval = src[realinsert];
+                desta = (meval >> 24) & 0xff;
+				destr = ((meval >> 16) & 0xff);
+				destg = ((meval >>  8) & 0xff);
+				destb = ((meval      ) & 0xff);
+                raccum = 0;
+                gaccum = 0;
+                baccum = 0;
+                
+                final int numinp = inputs[realinsert].length;
+                
+                for (int k = 0; k < numinp; k++)
+                {
+                    pixelcatcher = src[inputs[realinsert][k]];
+
+                    raccum += ((pixelcatcher >> 16) & 0xff);
+                    gaccum += ((pixelcatcher >>  8) & 0xff);
+                    baccum += ((pixelcatcher      ) & 0xff);
+                }
+	            raccum /= numinp; //r,
+    	        gaccum /= numinp; //g,
+        	    baccum /= numinp; //b.
+
+            int destlumi = (destr + destg + destb)/3;
+			int srclumi =  (raccum + gaccum + baccum)/3;
+			
+			raccum = (int) ( raccum * 1.25f + 32.0f);
+			gaccum = (int) ( gaccum * 1.25f + 32.0f);
+			baccum = (int) ( baccum * 1.25f + 32.0f);
+			
+			int lumidiff = (srclumi < destlumi) ? destlumi - srclumi : srclumi - destlumi;			
+			lumidiff *= 2;
+			
+			//mix by difference in lumi with a bit of a boost ;)
+			lumidiff = Math.min(0xff, Math.max(0, lumidiff));
+			
+			raccum = ((lumidiff * raccum) >> 8) + (((0xff - lumidiff) * destr) >> 8);
+			gaccum = ((lumidiff * gaccum) >> 8) + (((0xff - lumidiff) * destg) >> 8);
+			baccum = ((lumidiff * baccum) >> 8) + (((0xff - lumidiff) * destb) >> 8);
+			
+			destr = Math.min(0xff, Math.max(0,((raccum + destr) * decay ) >> 8));
+			destg = Math.min(0xff, Math.max(0,((gaccum + destg) * decay ) >> 8));
+			destb = Math.min(0xff, Math.max(0,((baccum + destb) * decay ) >> 8));
+            
+			dest[ realinsert ] = ((desta << 24) | (destr << 16) | (destg<< 8) | destb);
+            } // end scan loop
+		} // end nScans loop
+		isProcessing = false;
+	}
+
 	
 	public void nextFrameInlineAbsAdd(int[] src, int dest[], boolean withalpha, int[] alpha)
 	{

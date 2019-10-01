@@ -82,8 +82,8 @@ public class tyler extends JPanel implements KeyListener
 		txae.setForeground(new Color(0.4f,0.4f,0.4f));
 		scrollo.add(txae);
 		
-	setBorder(BorderFactory.createEtchedBorder());
-	setLayout(new BorderLayout());
+		setBorder(BorderFactory.createEtchedBorder());
+		setLayout(new BorderLayout());
 
      	aWindow.add(atiler, BorderLayout.CENTER);
      	
@@ -101,7 +101,7 @@ public class tyler extends JPanel implements KeyListener
     {
 		try 
 		{
-	          UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+	    	UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	    } catch (Exception exc) {
 	    	System.err.println("Error loading L&F: " + exc);
 	    }

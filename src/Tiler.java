@@ -310,7 +310,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	int PIXELAREAWIDTH = 512;
 	int PIXELAREAHEIGHT = 512;
 	
-	float particlerate = 13.0f; //-1.0f
+	//speed up particles then make them default-on again.
+	float particlerate = 0.0f;//13.0f; //-1.0f
 	float locrandom = 1;
 	float speedmultiplier = -0.2f;
 	double speedrandom = 24.6;
@@ -439,7 +440,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
     //Vector<TopologyProcessorThread> topologyProcessorThreads;
     java.util.List<TopologyProcessorThread> topologyProcessorThreads;
     // better be greater than zero, that's all I'm gonna say :P
-    int numTopologyProcessorThreads = 84;
+    int numTopologyProcessorThreads = 32;
     
 	int saveframespacing = -1;
 	boolean continuouspixelgrab = false;
@@ -450,7 +451,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	Topology.TopologyRenderMode topologyrendermode = Topology.TopologyRenderMode.DitheredMultilayer;
 	
 	int[] topologymap;
-	int numwarplayers = 8;
+	int numwarplayers = 32;
 	TopologyGenerationThread topologyGenerationThread = null;
 	Topology topologylayer;
 	boolean topologyRegenerating = false;
@@ -1536,6 +1537,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 						if (iloader.loadedOK) //it's finished, kick off the blending process
 						{
 							tile = bufferimage.getScaledInstance(bufferdimension.width,bufferdimension.height,Image.SCALE_FAST);
+							//tile = bufferimage.getScaledInstance(bufferdimension.width,bufferdimension.height,Image.SCALE_SMOOTH);
+							//tile = bufferimage.getScaledInstance(bufferdimension.width,bufferdimension.height,Image.SCALE_AREA_AVERAGING);
 							tile.flush();
 							//do tile write at tilealpha
 							MiniPixelTools.imageMixByScalar( tilepixels, tilepixelsLoading, 0xff-tileLoadAlpha, tilepixels);
@@ -1574,7 +1577,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 					
 				}
 			}
-			
+			// y offset here needs attention.. this is probably my-res(1920x1200)-specific!
 			context.drawImage(bufferimage, 0, 0, this);
 			framenumber++;
 		}
@@ -1670,6 +1673,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
                         while ( tptIter.hasNext() )
                         {
                             TopologyProcessorThread tpt = tptIter.next();
+							tpt.setMode( TopologyProcessorThread.TopologyProcessorMode.Average );
                             // don't queue if already running
                             if ( tpt.isFinished )
                             {
@@ -1693,6 +1697,29 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 					topologylayer.nextFrameContrastyBlend( bufferpixels, processbuffer,warpwithalpha,extractormap );
 					break;
 				}
+				case contrastyThreaded :
+                {       
+                    // gotta synchronize while iterating this list,
+                    // we are going to be modifying the thread objects!
+                    synchronized( topologyProcessorThreads )
+                    {
+                        Iterator<TopologyProcessorThread> tptIter = topologyProcessorThreads.iterator();
+                        while ( tptIter.hasNext() )
+                        {
+                            TopologyProcessorThread tpt = tptIter.next();
+							tpt.setMode( TopologyProcessorThread.TopologyProcessorMode.Contrasty );
+                            // don't queue if already running
+                            if ( tpt.isFinished )
+                            {
+                                tpt.setUnFinished();
+                                tpt.interrupt();
+                            }
+                        }
+                    }
+                    // we need to not-queue any duing this time
+                    waitForAllTopologyProcessorThreads();
+                    break;
+                }
 				case averageRule :
 				{
 					topologylayer.nextFrameInlineBlendWithRule(bufferpixels,processbuffer,toolrule.getFloatHarvest(), toolrule.getColorHarvest(), false, 1.0f, warpwithalpha,extractormap);
@@ -1711,6 +1738,27 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				case lumiDifference :
 				{
 					topologylayer.nextFrameInlineAnotherLumiDiffMix(bufferpixels,processbuffer,warpwithalpha,extractormap);
+					break;
+				}
+				case lumiDifferenceThreaded :
+				{
+					synchronized( topologyProcessorThreads )
+                    {
+                        Iterator<TopologyProcessorThread> tptIter = topologyProcessorThreads.iterator();
+                        while ( tptIter.hasNext() )
+                        {
+                            TopologyProcessorThread tpt = tptIter.next();
+							tpt.setMode( TopologyProcessorThread.TopologyProcessorMode.LumiDiff );
+                            // don't queue if already running
+                            if ( tpt.isFinished )
+                            {
+                                tpt.setUnFinished();
+                                tpt.interrupt();
+                            }
+                        }
+                    }
+                    // we need to not-queue any duing this time
+                    waitForAllTopologyProcessorThreads();
 					break;
 				}
 				case rule :

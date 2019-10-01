@@ -11,6 +11,25 @@
 
 public final class TopologyProcessorThread extends Thread 
 {
+	public enum TopologyProcessorMode
+	{
+		Average,
+		Contrasty,
+		LumiDiff;
+				
+		static String[] getNames()
+		{
+			String[] k = new String[ values().length ];
+			int l = 0;
+			for ( TopologyProcessorMode p : values() )
+			{
+				k[l] =  p.name();
+				l++;
+			}
+			return k;
+		}
+	}
+	
     Topology topo;
     int[] src;
     int[] dest;
@@ -20,6 +39,9 @@ public final class TopologyProcessorThread extends Thread
     int stride;
     int threadIndex;
     boolean terminate = false;
+	
+	TopologyProcessorMode currentMode = TopologyProcessorMode.Average;
+	
     public Boolean isFinished;
     
     TopologyProcessorThread( Topology topoV, int[] srcV, int[] destV, int startOffsetV, int scanLengthV, int nScansV, int strideV, int threadIndexV )
@@ -36,6 +58,11 @@ public final class TopologyProcessorThread extends Thread
         this.setPriority( Thread.MAX_PRIORITY ); 
     }
     
+	public void setMode( TopologyProcessorMode toMode )
+	{
+		currentMode = toMode;
+	}
+	
     public void setTerminate( boolean setTerminate )
     {
         terminate = setTerminate;
@@ -90,7 +117,12 @@ public final class TopologyProcessorThread extends Thread
                 //{
                 //    System.out.println("thread run: " + repeatString( ">>", threadIndex ) );
                 //}
-                topo.nextFrameInlineBlendSubSection( src, dest, startOffset, scanLength, nScans, stride, threadIndex );
+				switch( currentMode )
+				{
+					case Average: {topo.nextFrameInlineBlendSubSection( src, dest, startOffset, scanLength, nScans, stride, threadIndex );break;}
+					case Contrasty: {topo.nextFrameInlineContrastyBlendSubSection( src, dest, startOffset, scanLength, nScans, stride, threadIndex );break;}
+					case LumiDiff: {topo.nextFrameInlineAnotherLumiDiffMixSubSection( src, dest, startOffset, scanLength, nScans, stride, threadIndex );break;}
+				}
                 isFinished = new Boolean(true);
                 //if (threadIndex % 5 == 4 )
                 //{
