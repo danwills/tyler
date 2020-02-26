@@ -24,11 +24,11 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.util.Collections;
 //
-// tylerEngine - a node-based game editing engine:
+// tylerEngine - a node-based game or demo editing engine:
 //
 // Network editor thoughts:
-// * Essentially like Houdini - nodes with categories (eg SOP DOP CHOP). 
-// * Subnetworks and packaged subnetworks (like OTLs).
+// * Essentially like Houdini - nodes with categories (eg processes-geometry, creates-and-attaches solver ensembles, processes pixels etc). 
+// * Subnetworks and packaged subnetworks (like HDAs).
 // * Kissing node connections!
 // * Gestures to create nodes.
 // * Modifier-click to delete nodes or links.
@@ -774,8 +774,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		
  		// disable auto-binding for tab to cycle panes in the AWT since we're not using that but we'd like to use the tab key pls!!!
         // This generates a **harmless** compile-time warning because of the cast from empty-set to Vector-of-AWTKeyStroke's
-		currKFM.setDefaultFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET );
-		currKFM.setDefaultFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET );
+		currKFM.setDefaultFocusTraversalKeys( KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.emptySet() );
+		currKFM.setDefaultFocusTraversalKeys( KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.emptySet() );
 
 		output("Added keyEventDispatcher interface callback");
 		

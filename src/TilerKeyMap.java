@@ -252,7 +252,7 @@ class TilerKeyMap
 		
 		//declare all the KeyActions
 		
-		Vector<KeyAction> actions = new Vector();
+		Vector<KeyAction> actions = new Vector<KeyAction>();
 		
 		//Auto Mode
 		actions.add( new KeyAction( "Auto Mode/Interactive Mode", "setInteractiveMode", EditWidget.widgetType.IntValue, false, T , null, T, "Interactive mode - when set to zero, the user controls everything.. otherwise it turns on procedural control for various things as you increase the value", ctrlShiftA ) );
@@ -491,21 +491,26 @@ class TilerKeyMap
 		
 		for (Enumeration e = keymap.elements() ; e.hasMoreElements() ;) 
 		{
-			// System.out.println( "keymap entry number: " + k );
+			//System.out.println( "keymap entry number: " + k );
 			KeyAction kv = (KeyAction) e.nextElement();
 			long kk = (Long) kz.nextElement();
 			
 			//System.out.println( "Da Key: " + kk );
 			
-			if ( hasCtrl( kk ) ) System.out.print( "ctrl+" );
-			if ( hasAlt( kk ) ) System.out.print( "alt+" );
-			if ( hasShift( kk ) ) System.out.print( "shift+" );
-			String c = kv.getKeyString( );
+			//if ( hasCtrl( kk ) ) System.out.print( "ctrl+" );
+			//if ( hasAlt( kk ) ) System.out.print( "alt+" );
+			//if ( hasShift( kk ) ) System.out.print( "shift+" );
+			
+			String c = kv.getKeyString();
+			
+			//System.out.println( "Da KeyString: " + c );
+			
 			System.out.print( c );
 			System.out.print(" : ");
 			
-			//System.out.print( "\"" + kv.docstring + "\" " );
-			System.out.println( kv.methodname );
+			System.out.print( "\"" + kv.docstring + "\" " );
+			System.out.println("");
+			//System.out.println( kv.methodname );
 			k++;
      		}
 	}

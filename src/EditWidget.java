@@ -287,8 +287,8 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 		widgetstring = new String();
 		eventTime = (new java.util.Date()).getTime();
 		polarised = new Polar(0,0);
-		menutree = new Tree( "" );
-		menuchosen = new Tree( "" );
+		menutree = new Tree<String>( "" );
+		menuchosen = new Tree<String>( "" );
 		
 		switch ( widgettype )
 		{
@@ -321,11 +321,11 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 				{
 					String[] zplitstr = ((String)zitem).split("/");
 					
-					Tree currentRoot = menutree;
+					Tree<String> currentRoot = menutree;
 					
 					for (String zplit : zplitstr )
 					{
-						Tree existingRoot = currentRoot.getTree( zplit );
+						Tree<String> existingRoot = currentRoot.getTree( zplit );
 						
 						if (existingRoot != null ) 
 						{
@@ -415,7 +415,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							Point v =( Point ) data[0];
 							pointvar = v;
 						} catch (ClassCastException ex ) {
-							System.out.println("could not cast point initialiser value in editwidget constructor.");
+							System.out.println("Could not cast point initialiser value in editwidget constructor.");
 						}
 					}
 				}
@@ -434,7 +434,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							Polar v =( Polar ) data[0];
 							polarised = v;
 						} catch (ClassCastException ex ) {
-							System.out.println("could not cast point initialiser value in editwidget constructor.");
+							System.out.println("Could not cast point initialiser value in editwidget constructor.");
 						}
 					}
 				}
@@ -464,7 +464,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							String v =( String ) data[0];
 							widgetstring = v;
 						} catch (ClassCastException ex ) {
-							System.out.println("could not cast string initialiser value in editwidget constructor.");
+							System.out.println("Could not cast string initialiser value in editwidget constructor.");
 						}
 					}
 				}
@@ -481,7 +481,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							String v =( String ) data[0];
 							widgetstring = v;
 						} catch (ClassCastException ex ) {
-							System.out.println("could not cast L-String initialiser value in editwidget constructor.");
+							System.out.println("Could not cast L-String initialiser value in editwidget constructor.");
 						}
 					}
 				}
@@ -537,7 +537,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							gotmatrix = true;
 						}
 					} catch ( ClassCastException ex ) { 
-						System.out.println("could not cast point initialiser value in editwidget constructor.");
+						System.out.println("Could not cast point initialiser value in editwidget constructor.");
 					}
 				}
 				
@@ -560,7 +560,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 		if (widgetmethod == null) 
 		{
 			//System.out.println("Maybe the method was static, attempting cast. .");
-			try { widgetmethod = ((Class)methodowner).getMethod(methodname,parms);}
+			try { widgetmethod = ((Class<?>)methodowner).getMethod(methodname,parms);}
 			catch (ClassCastException snobbery) { error = true; /*System.out.println("initial cast of widget method object failed.. trying alternatives...");*/}
 			catch (NoSuchMethodException nsmx) { error = true; System.out.println("Widget static method  " + methodname + "( " + parms[0].toString() + " ) unexpectedly didn't exist."); }
 			catch (SecurityException sx) { error = true; System.out.println("Widget method  " + methodname + "( " + parms[0].toString() + " ) was unexpectedly private or protected."); }
@@ -709,7 +709,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							
 							parms[0] = getSlashSeperatedTree( menuchosen );
 							
-							if ( finaldelivery ) menuchosen = new Tree( "" );
+							if ( finaldelivery ) menuchosen = new Tree<String>( "" );
 							break;
 						}
 						case FloatValue  : {parms[0] = new Float(floatvar); break;}
@@ -749,7 +749,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							
 							try {
 								Class moclass = (Class) methodowner;
-								System.out.println("cast success");
+								//System.out.println("cast success");
 								cancast = true;
 							} catch (ClassCastException clcx) { System.out.println("Could not cast methodowner to class Class"); }
 							
@@ -789,7 +789,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							
 						if ((commandHistory.size() > 0) && (finaldelivery))
 						{
-							System.out.println("recorded commands:");
+							System.out.println("Recorded commands:");
 							System.out.println();
 
 							int numlines = commandHistory.size();
@@ -815,12 +815,12 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 
 							if ( saveas.getFile() != null )
 							{
-								System.out.println("save as file chosen: " + saveas.getFile());
+								System.out.println("Save as file chosen: " + saveas.getFile());
 								try {
 
 									File thefile = new File(saveas.getFile());
 									FileWriter awriter = new FileWriter( thefile );
-									System.out.println("got a fileWriter OK");
+									System.out.println("Got a fileWriter OK");
 									//java.io.StringWriter swrite = new java.io.StringWriter(awriter);
 									for (int p = 0; p < numlines; p++)
 									{
@@ -830,9 +830,9 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 									}
 									awriter.flush();
 									awriter.close();
-									System.out.println("macro file written of " + numlines + " lines");
+									System.out.println("Macro file written of " + numlines + " lines");
 
-								} catch (java.io.IOException ioxorz) { System.out.println("could not get a valid FileWriter to save with. " + ioxorz.toString()); }
+								} catch (java.io.IOException ioxorz) { System.out.println("Could not get a valid FileWriter to save with. " + ioxorz.toString()); }
 
 							}
 							//}
@@ -864,7 +864,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 	public void setDrawMode(int towhat)
 	{
 		drawmode = widgetDrawMode.values()[towhat];
-		System.out.println("drawmode set to: " + widgetDrawMode.getNames()[towhat] );
+		System.out.println("Drawmode set to: " + widgetDrawMode.getNames()[towhat] );
 	}
 	
 	public void setHighlightColor(Color towhat)
@@ -885,7 +885,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 	public static void setDefaultDrawMode(int towhat)
 	{
 		defaultdrawmode = widgetDrawMode.values()[towhat];
-		System.out.println("default drawmode set to: " + widgetDrawMode.getNames()[towhat] );
+		System.out.println("Default drawmode set to: " + widgetDrawMode.getNames()[towhat] );
 	}
 	
 	public static widgetDrawMode getDefaultDrawMode()
@@ -1428,7 +1428,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 	        
 	public void mouseClicked(MouseEvent m)
 	{
-		System.out.println("mouseClicked");
+		// System.out.println("mouseClicked");
 		if ( alive )
 		{
 			int mods = m.getModifiers();
@@ -1437,11 +1437,11 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 			if ((mods & InputEvent.BUTTON2_MASK) != 0) mousebutton = 2;
 			if ((mods & InputEvent.BUTTON1_MASK) != 0) mousebutton = 1;
 
-			System.out.println("mouseButton " + mousebutton);
+			//System.out.println("mouseButton " + mousebutton);
 			//if (mousebutton != 1) {killWidget(); return;}
 			
-			System.out.println("widgettype " + widgettype);
-			System.out.println("MenuValue " + widgettype.MenuValue);
+			//System.out.println("widgettype " + widgettype);
+			//System.out.println("MenuValue " + widgettype.MenuValue);
 			switch ( widgettype )
 			{
 				case EnumValue:
@@ -1458,10 +1458,10 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 				}
 				case MenuValue:
 				{
-					System.out.println("MenuValue");
+					//System.out.println("MenuValue");
 					if (mousebutton == 1)
 					{
-						System.out.println("mb1");
+						// System.out.println("mb1");
 						//if ((mods & InputEvent.CTRL_MASK) != 0) {chosen -= 1; if (chosen < 0) chosen += widgetdata.length;}
 						//else { chosen = (chosen + 1) % widgetdata.length;}
 						//Collection<String> topLevel = menutree.getSuccessors( "" );
@@ -1753,7 +1753,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							{
 								if (shift)
 								{
-									System.out.println("loading l-string from file...");
+									System.out.println("Loading l-string from file...");
 									if (childWidges == null) childWidges = new Vector<EditWidget>();
 									String[] lPresetFileList = getLFileList();
 									childWidges.add(new EditWidget(widgetType.StringChoice,"setLStringFromFile",this,
@@ -1891,7 +1891,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 			
 			if ((lastfilename.equals(filename)) && (lastlstring != null))
 			{
-				System.out.println("cached lstring load for string:" + lastlstring);
+				System.out.println("Cached L-String load for String:" + lastlstring);
 				widgetstring = lastlstring;
 				return;
 			}
@@ -1928,7 +1928,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 					EditWidget.lastlstring = aline;
 					EditWidget.lastfilename = filename;
 					
-					System.out.println("read lstring from file: " + aline);
+					System.out.println("Read L-String from file: " + aline);
 					aline = lineReader.readLine(); 
 					numlines++;
 				}
@@ -1944,7 +1944,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 		for (int i = 0; i < filelist.length; i++)
 		{
 			namelist[i] = filelist[i].getName();
-			System.out.println("noticed L-StringFile called:" + namelist[i]);
+			System.out.println("Noticed L-StringFile called:" + namelist[i]);
 		}
 		return namelist;
 	}
@@ -2296,7 +2296,7 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 							}
 						}
 					} else {
-						System.out.println("bloody hell, booleanmatrix was null! .. can't draw it.");
+						System.out.println("Bloody hell, booleanmatrix was null! .. can't draw it.");
 					}
 				}
 				
