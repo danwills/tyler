@@ -23,8 +23,9 @@ import java.io.*;
 //import com.sun.image.codec.jpeg.*;
 import javax.imageio.ImageIO;
 import java.util.Collections;
+import javax.swing.SwingUtilities;
 //
-// tylerEngine - a node-based game or demo editing engine:
+// Next generation of this system could be like a tylerEngine - a node-based game or demo editing engine:
 //
 // Network editor thoughts:
 // * Essentially like Houdini - nodes with categories (eg processes-geometry, creates-and-attaches solver ensembles, processes pixels etc). 
@@ -46,8 +47,7 @@ import java.util.Collections;
 // * GPU-accelerated pixel FFT
 // * pixelshader stuff including fractal rendering.
 
-
-// todo:
+// TODO:
 
 // Figure out and fix keeping the current scroll-position when changing defaultLevel!
 // Have a default currentLevel time-blend-rate so that currentLevel may change gradually to a new value.
@@ -68,9 +68,6 @@ import java.util.Collections;
 // Automata modes (runtime rule sampling and universe lookups)_
 // LString generator nodes
 // Oversampled conditional derivative/filter driven particle motion
-//
-
-
 
 // Use somekinda ordering/slicing map to divide up layers of topology and ditheredly set neighbors to blend.
 
@@ -332,6 +329,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	boolean multipointfromparticle = true;
 	int numcentersmultipoint = 5;
 	
+	boolean drawKeys = false;
+	boolean drawActions = false;
 	int interactiveMode = 0;
 	float speedNoiseAmp = 3.8f;
 	float speedNoiseFreq = 0.03128637f;
@@ -344,9 +343,17 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	int glide_length = 10; //10 frames .. not used yet
 	public boolean draggingTilePosition = false;
 	boolean mousedown = false;
+	boolean mouselmbdown = false;
+	boolean mousemmbdown = false;
+	boolean mousermbdown = false;
 	boolean ctrldown = false;
+	boolean altdown = false;
+	boolean shiftdown = false;
+	boolean keydown = false;
+	String textdown = "";
 	MouseCursorMode mousecursormode = MouseCursorMode.defaultSystem;
-	//float menuspeed = (float)Math.PI/16.0f;;
+	//float menuspeed = (float)Math.PI/16.0f;
+	
 	float menuspeed = (float)Math.PI/4.0f;
 	Point clickloc;
 	Point mouseloc;
@@ -482,8 +489,8 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	int sleepdelay = 100;
 
 	public static Color bgcolor = java.awt.Color.black;
-	public  static Color midcolor = java.awt.Color.darkGray;
-	public static  Color fgcolor = java.awt.Color.white;
+	public static Color midcolor = java.awt.Color.darkGray;
+	public static Color fgcolor = java.awt.Color.white;
 	
 	boolean initialised = false;
 	double initializedPercent = 0.0;
@@ -1051,13 +1058,12 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				int pbxbit = (int) ( ( bufferdimension.width ) / 2.0f); 
 				int pbybit = (int) ( ( bufferdimension.height ) / 2.0f);
 				
-				//use scaled copy of masterpixel?
-				// Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * 2), (int)( bufferdimension.height / scalepixelbuffer * 2), Image.SCALE_FAST );
+				//use scaled copy of masterpixel? .. TODO: As an option.
                 // Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_AREA_AVERAGING );
                 // Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * topologyresfactor), (int)( bufferdimension.height / scalepixelbuffer * topologyresfactor), Image.SCALE_SMOOTH );
                 Image bufferimageScaled = bufferimage.getScaledInstance( (int)( bufferdimension.width / scalepixelbuffer * overallresfactor), (int)( bufferdimension.height / scalepixelbuffer * overallresfactor), Image.SCALE_FAST );
 				MiniPixelTools.grabPixelRectangle( bufferimageScaled, bufferpixels, 0, 0, (int)(bufferdimension.width) ,(int)(bufferdimension.height), masterpixel );
-		}
+			}
 			
 			if ( screenclearalpha >= 1.0f )
 			{
@@ -1286,6 +1292,9 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				
     				if (scalepixelbuffer != 1.0f) 
     					pixelbufferScaled = pixelbuffer.getScaledInstance( (int)( bufferdimension.width * scalepixelbuffer ), (int)( bufferdimension.height * scalepixelbuffer ), Image.SCALE_FAST );
+						// TODO: add this as an option
+						//pixelbufferScaled = pixelbuffer.getScaledInstance( (int)( bufferdimension.width * scalepixelbuffer ), (int)( bufferdimension.height * scalepixelbuffer ), Image.SCALE_SMOOTH );
+						
     					
 				int pbxbit = (int) ( ( scalepixelbuffer * bufferdimension.width ) / overallresfactor); 
 				int pbybit = (int) ( ( scalepixelbuffer * bufferdimension.height ) / overallresfactor);
@@ -1329,7 +1338,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			//
 			// post-emission interparticle forces
 			
-			// switch on mouseaction..
+			// switch on mouseaction..?
 			if (true) //(!ctrldown) || (ctrldown && mousedown))
 			{
 				if ((particlerate >= 1.0f))
@@ -1483,6 +1492,97 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 				dawidgets.remove( killwidget );
 			}
 			
+			if (drawActions) 
+			{
+				//
+			}
+			
+			if (drawKeys)
+			{
+				// Add something that records when an actual TilerKeyMap hotkey-action happens and
+				// draw its keycombo for a while, then fade out?
+				// Could potentially fade ctrl and alt and so-on IN as well as long as it's snappy!
+				// also probably should detect unknown keycodes and discard them!.
+				String drawWord = "";
+				
+				
+				if (ctrldown)
+				{
+					if (drawWord != "")
+					{
+						drawWord += "+";
+					}
+					drawWord += "Ctrl";
+				}
+				
+				if (altdown)
+				{
+					if (drawWord != "")
+					{
+						drawWord += "+";
+					}
+					drawWord += "Alt";
+				}
+				
+				if (shiftdown)
+				{
+					if (drawWord != "")
+					{
+						drawWord += "+";
+					}
+					drawWord += "Shift";
+				}
+				
+				if (keydown)
+				{
+					if ( (textdown != "Alt") && 
+						 (textdown != "Ctrl") &&
+						 (textdown != "Shift") )
+					{
+						if (drawWord != "")
+						{
+							drawWord += "+";
+						}
+						drawWord += textdown; //new String("");
+					}
+				}
+				
+				if (mouselmbdown)
+				{
+					if (drawWord != "")
+					{
+						drawWord += "+";
+					}
+					drawWord += "LMB";
+				}
+				
+				if (mousemmbdown)
+				{
+					if (drawWord != "")
+					{
+						drawWord += "+";
+					}
+					drawWord += "MMB";
+				}
+				
+				if (mousermbdown)
+				{
+					if (drawWord != "")
+					{
+						drawWord += "+";
+					}
+					drawWord += "RMB";
+				}
+				buffercontext.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				buffercontext.setFont(new Font("Verdana",Font.PLAIN,134));
+				FontMetrics fontmetwurst = buffercontext.getFontMetrics();
+				float txtheight = fontmetwurst.getHeight();
+				buffercontext.setColor( setColorAlpha( java.awt.Color.lightGray, 0.67f ) );
+				buffercontext.drawString( drawWord, 
+										  mouseloc.x - fontmetwurst.stringWidth(drawWord)/2,
+										  (mouseloc.y+txtheight/2) );
+			}
+			
 			if (continuoussave) 
 			{
 				if (saveframespacing > 0)
@@ -1537,6 +1637,7 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 						if (iloader.loadedOK) //it's finished, kick off the blending process
 						{
 							tile = bufferimage.getScaledInstance(bufferdimension.width,bufferdimension.height,Image.SCALE_FAST);
+							// TODO: add this as an option
 							//tile = bufferimage.getScaledInstance(bufferdimension.width,bufferdimension.height,Image.SCALE_SMOOTH);
 							//tile = bufferimage.getScaledInstance(bufferdimension.width,bufferdimension.height,Image.SCALE_AREA_AVERAGING);
 							tile.flush();
@@ -1581,6 +1682,15 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 			context.drawImage(bufferimage, 0, 0, this);
 			framenumber++;
 		}
+	}
+	
+	public Color setColorAlpha( Color col, float alpha )
+	{
+		return new Color( col.getRed(), 
+						  col.getGreen(), 
+						  col.getBlue(),
+						  (int)( 255.0f * alpha ) );
+		
 	}
 	
 	public void addWidget( EditWidget e )
@@ -2579,6 +2689,16 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		tileLoadAlpha = (towhat <= 0) ? 1 : (towhat > 0xff) ? 0xff : towhat;
 	}
 	
+	public void setDrawKeys(boolean towhat)
+	{
+		drawKeys = towhat;
+	}
+	
+	public void setDrawActions(boolean towhat)
+	{
+		drawActions = towhat;
+	}
+	
 	public void setInteractiveMode(int towhat)
 	{
 		interactiveMode = towhat;
@@ -2679,6 +2799,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	{
 		int mods = e.getModifiers();
 		
+		mouselmbdown = SwingUtilities.isLeftMouseButton( e );
+		mousemmbdown = SwingUtilities.isMiddleMouseButton( e );
+		mousermbdown = SwingUtilities.isRightMouseButton( e );
+		
 		boolean ctrl = ( (mods & InputEvent.CTRL_MASK) != 0);
 		boolean alt = ( (mods & InputEvent.ALT_MASK) != 0);
 		boolean shift = ( (mods & InputEvent.SHIFT_MASK) != 0);
@@ -2717,13 +2841,22 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 	}
 
 	public void mouseEntered(MouseEvent e)
 	{
 		int mods = e.getModifiers();
+		
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 
 		mouseloc.move(e.getX(),e.getY());
 	}
@@ -2733,6 +2866,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		int mods = e.getModifiers();
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 
 		mouseloc.move(e.getX(),e.getY());
 	}
@@ -2740,8 +2877,17 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	public void mousePressed(MouseEvent e)
 	{
 		int mods = e.getModifiers();
+		
+		mouselmbdown = SwingUtilities.isLeftMouseButton(e);
+		mousemmbdown = SwingUtilities.isMiddleMouseButton(e);
+		mousermbdown = SwingUtilities.isRightMouseButton(e);
+		
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 		
 		boolean ctrl = ( (mods & InputEvent.CTRL_MASK) != 0);
 		boolean alt = ( (mods & InputEvent.ALT_MASK) != 0);
@@ -2780,13 +2926,21 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	public void mouseReleased(MouseEvent e)
 	{                                          
 		int mods = e.getModifiers();
+		// should maybe actually detect what is being released here?
+		mouselmbdown = SwingUtilities.isLeftMouseButton( e );
+		mousemmbdown = SwingUtilities.isMiddleMouseButton( e );
+		mousermbdown = SwingUtilities.isRightMouseButton( e );
+		
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true; 
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 		
 		boolean ctrl = ( (mods & InputEvent.CTRL_MASK) != 0);
 		boolean alt = ( (mods & InputEvent.ALT_MASK) != 0);
 		boolean shift = ( (mods & InputEvent.SHIFT_MASK) != 0);
-		
 		
 		/*if ( ( (mods & InputEvent.BUTTON1_MASK) != 0) &&  ( (mods & InputEvent.CTRL_MASK) != 0) && ( (mods & InputEvent.ALT_MASK) != 0) && ( (mods & InputEvent.SHIFT_MASK) == 0))
 		{
@@ -2808,9 +2962,17 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 
 	public void mouseDragged(MouseEvent e)
 	{
+		mouselmbdown = SwingUtilities.isLeftMouseButton( e );
+		mousemmbdown = SwingUtilities.isMiddleMouseButton( e );
+		mousermbdown = SwingUtilities.isRightMouseButton( e );
+		
 		int mods = e.getModifiers();
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 		
 		/*if ( ( (mods & InputEvent.BUTTON1_MASK) != 0) && ( (mods & InputEvent.CTRL_MASK) != 0) && ( (mods & InputEvent.ALT_MASK) != 0) && ( (mods & InputEvent.SHIFT_MASK) == 0))
 		{
@@ -2849,6 +3011,9 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 
 	public void mouseMoved(MouseEvent e)
 	{
+		mouselmbdown = SwingUtilities.isLeftMouseButton( e );
+		mousemmbdown = SwingUtilities.isMiddleMouseButton( e );
+		mousermbdown = SwingUtilities.isRightMouseButton( e );
 		//another way.. not as interesting..:
 		//float tmp1 = (randsrc.nextFloat() - 0.5f) * 20;
 		//float tmp2 = (randsrc.nextFloat() - 0.5f) * 20;
@@ -2859,6 +3024,10 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		draggingTilePosition = false;
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 
 		if (interactiveMode > 20)
 		{
@@ -2945,22 +3114,34 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 		{
 			int keykode = e.getKeyCode();
 			int mods = e.getModifiers();
+			String keyname = e.getKeyText(keykode);
+			if (keykode != 0)
+			{
+				textdown = keyname;
+				keydown = true;
+			}
+			
 			if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 			else ctrldown = false;
+			if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+			else altdown = false;
+			if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+			else shiftdown = false;
 			
 			// lookup keycode + mods in global actions map
-			//so.. i guess I need a global actions map of some kind..
+			// so i guess I need a global actions map of some kind..
 			//
-			//
-			//define a key class that contains the keykode and modifiers
-			//and an action class to specify what to do (this is where it all gets interesting.. ;) )
+			// defined a keymap class (TilerKeyMap) that contains the keykode and modifiers
+			// and an action class to specify what to do (this is where it gets interesting.. ;) )
 			// then form a key-value pair map
 			
-			//Hashtable<keyMapKey,keyMapAction> keymap = new HashTable<keyMapKey,keyMapAction>();
+			// Hashtable<keyMapKey,keyMapAction> keymap = new HashTable<keyMapKey,keyMapAction>();
 			
-			//hmm I need to associate keycode and modifiers to methodname and so on.. hmm..
-			//this whizzbang auto-unboxing new-collections framework hashtable should do the trick! ;D
+			// I need to associate keycode and modifiers to methodname and so on.. hmm..
+			// this whizzbang auto-unboxing new-collections framework hashtable should do the trick! ;D
 			
+			// I would like to be able to draw the keys that are down (as text) based on what is 
+			// detected here so that it's clear from a screen-capture what the keyboard is up to.
 			
 			if ( dawidgets.size() == 0 )
 			{
@@ -3064,22 +3245,43 @@ public class Tiler extends Canvas implements Runnable, KeyEventDispatcher, KeyLi
 	{
 		int keykode = e.getKeyCode();
 		String keyname = e.getKeyText(keykode);
+		if (keykode != 0)
+		{	
+			textdown = keyname;
+			// TODO: make this track individual pressed/released sequences
+			// have a timeout too.
+			keydown = false;
+		}
 		//output(keyname + " key Released");
 		
 		int mods = e.getModifiers();
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 	}
 
 	public void keyTyped(KeyEvent e)
 	{
 		int keykode = e.getKeyCode();
 		String keyname = e.getKeyText(keykode);
+		if (keykode != 0)
+		{		
+			textdown = keyname;
+			// I think it's correct to treat this as release..
+			keydown = false;
+		}
 		//output(keyname + " key Typed");
 
 		int mods = e.getModifiers();
 		if ((mods & InputEvent.CTRL_MASK) != 0) ctrldown = true;
 		else ctrldown = false;
+		if ((mods & InputEvent.ALT_MASK) != 0) altdown = true;
+		else altdown = false;
+		if ((mods & InputEvent.SHIFT_MASK) != 0) shiftdown = true;
+		else shiftdown = false;
 	}
 
 	public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height)

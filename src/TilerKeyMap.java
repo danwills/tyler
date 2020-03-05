@@ -105,9 +105,11 @@ class TilerKeyMap
 		long ctrlAltD = addCtrl( addAlt( d ) );
 		long ctrlShiftD = addCtrl( addShift( d ) );
 		long ctrlD = addCtrl( d );
+		long altD = addAlt( d );
 		
 		long ctrlE = addCtrl( e );
 		long altE = addAlt( e );
+		long shiftE = addShift( e );
 		
 		long ctrlShiftF = addShift( addCtrl( f ));
 		long ctrlF = addCtrl( f );
@@ -256,6 +258,9 @@ class TilerKeyMap
 		
 		//Auto Mode
 		actions.add( new KeyAction( "Auto Mode/Interactive Mode", "setInteractiveMode", EditWidget.widgetType.IntValue, false, T , null, T, "Interactive mode - when set to zero, the user controls everything.. otherwise it turns on procedural control for various things as you increase the value", ctrlShiftA ) );
+		actions.add( new KeyAction( "Globalz/Draw Keys", "setDrawKeys", EditWidget.widgetType.BooleanValue, false, T , null, T, "Draw Keys - Render text to display what keys are being pressed, for screen-captures.", altD ) );
+		actions.add( new KeyAction( "Globalz/Draw Actions", "setDrawActions", EditWidget.widgetType.BooleanValue, false, T , null, T, "Draw Actions - Render text to display the most recent widget action.", shiftE ) );
+		
 		actions.add( new KeyAction( "Auto Mode/Wiggle Amp", "setPixelWiggleAmp", EditWidget.widgetType.FloatValue, false, T, null, T, "Amplitude of movement of the various bits when in non-interactive mode ", ctrlShiftV ) );
 		actions.add( new KeyAction( "Auto Mode/Frequency", "setPixelRotNoiseFreq", EditWidget.widgetType.FloatValue, false, T, null, T, "Frequency of movement of the various bits when in non-interactive mode ", ctrlV ) );
 		actions.add( new KeyAction( "Auto Mode/Speed Noise Freq", "setSpeedNoiseFreq", EditWidget.widgetType.FloatValue, false, T, null, T, "Frequency of speed noise in non-interactive modes", ctrlShiftX ) );

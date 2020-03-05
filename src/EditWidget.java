@@ -1813,8 +1813,8 @@ class EditWidget implements MouseListener, MouseMotionListener, KeyListener
 				case KeyEvent.VK_MINUS    : { if (shift) deliver(false); break;}
 				case KeyEvent.VK_INSERT    : { if (shift) deliver(false); break;}
 				case KeyEvent.VK_DELETE    : { if (shift) deliver(false); break;}
-				case KeyEvent.VK_HOME      : { if (shift) deliver(false);; break;}
-				case KeyEvent.VK_END       : { if (shift) deliver(false);; break;}
+				case KeyEvent.VK_HOME      : { if (shift) deliver(false); break;}
+				case KeyEvent.VK_END       : { if (shift) deliver(false); break;}
 				case KeyEvent.VK_PAGE_UP   : { if (shift) deliver(false); break;}
 				case KeyEvent.VK_PAGE_DOWN : { if (shift) deliver(false); break;}
 
